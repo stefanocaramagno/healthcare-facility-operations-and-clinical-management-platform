@@ -1,0 +1,174 @@
+<!--
+  File: frontend/pages/auth/activation-pending.html
+
+  Scopo
+  -----
+  Definire la pagina informativa mostrata dopo la registrazione di un account
+  che richiede ancora la conferma dell’indirizzo e-mail prima di consentire
+  l’accesso effettivo al portale.
+
+  Ruolo nel sistema
+  -----------------
+  Questa pagina rappresenta lo stato intermedio del flusso di onboarding:
+  informa l’utente che l’account non è ancora utilizzabile, spiega i passaggi
+  successivi e fornisce le azioni necessarie per reinviare il link di attivazione
+  o tornare al login.
+
+  Note
+  ----
+  Il file contiene il markup strutturale della pagina e gli hook DOM utilizzati
+  dallo script `../../js/auth/activation-pending.js`. La logica di reinvio del
+  link, personalizzazione dei testi e gestione dei messaggi è demandata al codice
+  JavaScript associato.
+-->
+
+<!doctype html>
+<html lang="it">
+
+<head>
+  <!-- Metadati di base del documento HTML -->
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Titolo mostrato nella scheda del browser -->
+  <title>Attivazione account | Healthcare Portal</title>
+
+  <!-- Risorse statiche condivise della pagina -->
+  <link rel="icon" href="../../assets/favicon.ico" />
+  <link rel="stylesheet" href="../../css/styles.css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!--
+    Script condivisi e specifici della pagina.
+    Vengono caricati con `defer` per eseguire la logica applicativa
+    dopo il parsing completo del documento HTML.
+  -->
+  <script defer src="../../js/common/utils.js"></script>
+  <script defer src="../../js/auth/activation-pending.js"></script>
+</head>
+
+<body class="min-h-screen bg-slate-50 text-slate-900">
+  <!--
+    Header minimale della pagina.
+    Mantiene il branding del portale e consente il ritorno al login o alla home.
+  -->
+  <header class="border-b bg-white">
+    <div class="mx-auto max-w-6xl px-4 py-4 flex items-center justify-between">
+      <!-- Identità visuale del portale -->
+      <a href="../../index.html" class="flex items-center gap-2" aria-label="Torna alla home">
+        <div class="h-9 w-9 rounded-xl bg-blue-600 text-white grid place-items-center font-semibold">H</div>
+        <div class="leading-tight">
+          <div class="font-semibold">Healthcare Portal</div>
+          <div class="text-xs text-slate-500">Attivazione account</div>
+        </div>
+      </a>
+
+      <!-- Collegamento rapido al flusso di login -->
+      <a id="loginLink" href="./login.html" class="text-sm text-slate-600 hover:text-slate-900">Torna al login</a>
+    </div>
+  </header>
+
+  <!--
+    Contenuto principale della pagina.
+    La struttura a due colonne separa la guida informativa dal pannello operativo.
+  -->
+  <main class="mx-auto max-w-6xl px-4 py-10">
+    <div class="grid lg:grid-cols-2 gap-8 items-start">
+      <!--
+        Colonna informativa visibile su desktop.
+        Spiega il significato dello stato “attivazione pendente” e i passaggi da seguire.
+      -->
+      <section class="hidden lg:block">
+        <div class="rounded-2xl border bg-white p-8 shadow-sm">
+          <div class="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-sm text-blue-700">
+            <span class="h-2 w-2 rounded-full bg-blue-600"></span>
+            Verifica e-mail
+          </div>
+
+          <h1 class="mt-4 text-3xl font-semibold tracking-tight">Un ultimo passaggio prima di accedere.</h1>
+          <p class="mt-3 text-slate-600 leading-relaxed">
+            Per motivi di sicurezza, l’account viene attivato solo dopo la conferma dell’indirizzo e-mail indicato in
+            fase di registrazione.
+          </p>
+
+          <!-- Riepilogo guidato dei passaggi necessari per completare l’attivazione -->
+          <div class="mt-6 grid gap-3 text-sm">
+            <div class="flex gap-3">
+              <div class="h-9 w-9 rounded-xl bg-blue-50 grid place-items-center text-blue-700 font-semibold">1</div>
+              <div>
+                <div class="font-medium">Apri la tua e-mail</div>
+                <div class="text-slate-600">Controlla la casella di posta, inclusa la cartella spam o indesiderata.
+                </div>
+              </div>
+            </div>
+            <div class="flex gap-3">
+              <div class="h-9 w-9 rounded-xl bg-blue-50 grid place-items-center text-blue-700 font-semibold">2</div>
+              <div>
+                <div class="font-medium">Clicca il link di attivazione</div>
+                <div class="text-slate-600">Il sistema attiverà automaticamente il tuo account.</div>
+              </div>
+            </div>
+            <div class="flex gap-3">
+              <div class="h-9 w-9 rounded-xl bg-blue-50 grid place-items-center text-blue-700 font-semibold">3</div>
+              <div>
+                <div class="font-medium">Effettua il login</div>
+                <div class="text-slate-600">Una volta completata la verifica, potrai accedere normalmente al portale.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!--
+        Colonna operativa contenente i messaggi dinamici e le azioni disponibili.
+        Include il pulsante di reinvio e il collegamento al login.
+      -->
+      <section>
+        <div class="rounded-2xl border bg-white p-6 sm:p-8 shadow-sm">
+          <!-- Intestazione del pannello operativo con titolo e sottotitolo aggiornabili -->
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <h2 id="activationTitle" class="text-xl font-semibold">Attivazione account richiesta</h2>
+              <p id="activationSubtitle" class="mt-1 text-sm text-slate-600">
+                Controlla la tua e-mail per attivare l’account.
+              </p>
+            </div>
+            <span class="shrink-0 rounded-full bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700">
+              Accesso protetto
+            </span>
+          </div>
+
+          <!-- Contenitore per messaggi informativi mostrati dinamicamente -->
+          <div id="infoBox"
+            class="hidden mt-4 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800"></div>
+
+          <!-- Contenitore per eventuali messaggi di errore -->
+          <div id="errorBox"
+            class="hidden mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"></div>
+
+          <!-- Azioni principali disponibili nella pagina -->
+          <div class="mt-6 grid gap-4">
+            <button id="resendBtn" type="button"
+              class="h-11 rounded-xl bg-blue-600 px-4 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-200">
+              Reinvia link di attivazione
+            </button>
+
+            <a href="./login.html"
+              class="h-11 rounded-xl border px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 inline-flex items-center justify-center">
+              Vai al login
+            </a>
+          </div>
+
+          <!-- Nota finale con indicazioni operative per il mancato recapito dell’e-mail -->
+          <div class="mt-6 border-t pt-5 text-sm text-slate-600 leading-relaxed">
+            Se non ricevi l’e-mail entro pochi minuti, utilizza il pulsante di reinvio oppure verifica che l’indirizzo
+            inserito sia corretto.
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+</body>
+
+</html>

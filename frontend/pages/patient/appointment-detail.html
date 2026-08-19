@@ -1,0 +1,250 @@
+<!--
+  File: frontend/pages/patient/appointment-detail.html
+
+  Scopo
+  -----
+  Definire la pagina di dettaglio di un singolo appuntamento dell’area Patient,
+  consentendo al paziente di consultare le informazioni principali relative alla
+  prenotazione, verificare stato e pagamento, accedere ai flussi collegati e
+  utilizzare le eventuali azioni di gestione consentite.
+
+  Ruolo nel sistema
+  -----------------
+  Questa pagina appartiene all’area Patient del portale e rappresenta la vista
+  di approfondimento di un appuntamento già creato. Costituisce il punto di
+  accesso alla consultazione completa della prenotazione selezionata e alle
+  azioni correlate, come ripianificazione, annullamento, accesso al pre-triage,
+  verifica dei pagamenti e consultazione dei referti.
+
+  Note
+  ----
+  Il file contiene esclusivamente il markup strutturale della pagina e i
+  placeholder DOM che verranno popolati dallo script associato
+  `../../js/patient/appointment-detail.js`. La logica di autenticazione,
+  caricamento dati, abilitazione/disabilitazione delle azioni e aggiornamento
+  dinamico dei contenuti è delegata ai moduli JavaScript condivisi e specifici
+  della vista.
+-->
+
+<!doctype html>
+<html lang="it">
+
+<head>
+  <!-- Metadati di base del documento -->
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Titolo mostrato nella scheda del browser -->
+  <title>Dettaglio appuntamento | Healthcare Portal</title>
+
+  <!-- Risorse statiche condivise della pagina -->
+  <link rel="icon" href="../../assets/favicon.ico" />
+  <link rel="stylesheet" href="../../css/styles.css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!--
+    Script condivisi e specifici della pagina.
+    Vengono caricati con `defer` per eseguire la logica applicativa
+    dopo il parsing completo del documento HTML.
+  -->
+  <script defer src="../../js/common/utils.js"></script>
+  <script defer src="../../js/common/session.js"></script>
+  <script defer src="../../js/common/auth.js"></script>
+  <script defer src="../../js/common/ui-components.js"></script>
+  <script defer src="../../js/patient/appointment-detail.js"></script>
+</head>
+
+<body class="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
+  <!-- Placeholder della navbar condivisa, renderizzata dinamicamente lato client -->
+  <div data-component="navbar"></div>
+
+  <!--
+    Contenuto principale della pagina di dettaglio appuntamento.
+    Comprende intestazione della vista, riquadri informativi, azioni correlate
+    e contenitore per errori globali.
+  -->
+  <main class="mx-auto w-full max-w-7xl px-4 py-8 flex-1">
+    <!--
+      Sezione introduttiva della pagina.
+      Presenta il contesto della vista e mette a disposizione link rapidi
+      verso l’elenco appuntamenti e la dashboard del paziente.
+    -->
+    <section class="rounded-2xl border bg-white p-6 sm:p-8 shadow-sm">
+      <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
+        <div class="flex-1">
+          <div class="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-sm text-blue-700">
+            <span class="h-2 w-2 rounded-full bg-blue-600"></span>
+            Dettaglio
+          </div>
+
+          <h1 class="mt-4 text-2xl sm:text-3xl font-semibold tracking-tight">Dettaglio appuntamento</h1>
+
+          <p class="mt-2 text-slate-600 leading-relaxed">
+            Qui può consultare le informazioni principali e gestire eventuali modifiche consentite.
+          </p>
+        </div>
+
+        <!-- Collegamenti rapidi verso le altre viste principali dell’area Patient -->
+        <div class="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
+          <a href="./appointments.html"
+            class="h-10 inline-flex items-center justify-center rounded-xl border bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-100">
+            Appuntamenti
+          </a>
+          <a href="./dashboard.html"
+            class="h-10 inline-flex items-center justify-center rounded-xl border bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-100">
+            Dashboard
+          </a>
+        </div>
+      </div>
+
+      <!--
+        Riga informativa contenente il riferimento dell’appuntamento e
+        il badge di caricamento globale della pagina.
+      -->
+      <div class="mt-6 flex items-center justify-between gap-3">
+        <div class="text-sm text-slate-600">
+          Riferimento: <span id="apptRef" class="font-medium text-slate-800">—</span>
+        </div>
+
+        <div id="loadingBadge"
+          class="hidden inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-sm text-slate-700">
+          <span class="h-2 w-2 rounded-full bg-slate-500 animate-pulse"></span>
+          Caricamento…
+        </div>
+      </div>
+    </section>
+
+    <!--
+      Layout principale della vista.
+      A sinistra sono presenti i contenuti informativi e i collegamenti rapidi,
+      mentre a destra è collocato il pannello di gestione dell’appuntamento.
+    -->
+    <section class="mt-6 grid gap-4 lg:grid-cols-3">
+      <div class="lg:col-span-2 grid gap-4">
+        <!--
+          Sezione principale con le informazioni descrittive della prenotazione:
+          prestazione, stato, pagamento, data/ora, costo e note.
+        -->
+        <section class="rounded-2xl border bg-white p-6 shadow-sm">
+          <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+            <div class="min-w-0">
+              <div class="text-xs font-medium text-slate-500">Prestazione</div>
+              <div id="svcName" class="mt-1 text-lg font-semibold text-slate-900 truncate">—</div>
+              <div id="svcCode" class="mt-1 text-sm text-slate-600">—</div>
+            </div>
+
+            <!--
+              Indicatori sintetici relativi allo stato dell’appuntamento
+              e allo stato del pagamento associato.
+            -->
+            <div class="shrink-0 flex flex-col items-start sm:items-end gap-2">
+              <div id="statusPill"
+                class="inline-flex items-center rounded-full px-3 py-1 text-xs font-medium bg-slate-100 text-slate-700">
+                —
+              </div>
+              <div id="paymentPill"
+                class="inline-flex items-center rounded-full px-3 py-1 text-xs font-medium bg-slate-100 text-slate-700">
+                —
+              </div>
+            </div>
+          </div>
+
+          <!--
+            Blocchi riepilogativi dedicati alla pianificazione temporale
+            e al costo indicativo della prenotazione.
+          -->
+          <div class="mt-5 grid gap-3 sm:grid-cols-2">
+            <div class="rounded-2xl border bg-slate-50 p-4">
+              <div class="text-xs font-medium text-slate-500">Data e ora</div>
+              <div id="whenText" class="mt-1 text-base font-semibold text-slate-900">—</div>
+              <div id="whenHint" class="mt-1 text-xs text-slate-600">—</div>
+            </div>
+
+            <div class="rounded-2xl border bg-slate-50 p-4">
+              <div class="text-xs font-medium text-slate-500">Costo indicativo</div>
+              <div id="priceText" class="mt-1 text-base font-semibold text-slate-900">—</div>
+              <div class="mt-1 text-xs text-slate-600">Importo associato alla prenotazione.</div>
+            </div>
+          </div>
+
+          <!-- Note aggiuntive associate all’appuntamento -->
+          <div class="mt-5">
+            <div class="text-xs font-medium text-slate-500">Note</div>
+            <div id="notesText" class="mt-2 text-sm text-slate-700 leading-relaxed">
+              —
+            </div>
+          </div>
+        </section>
+
+        <!--
+          Sezione con i collegamenti rapidi verso i flussi applicativi collegati
+          all’appuntamento: pre-visita, pagamenti e referti.
+        -->
+        <section class="rounded-2xl border bg-white p-6 shadow-sm">
+          <h2 class="text-lg font-semibold">Prossimi passi</h2>
+          <p class="mt-1 text-sm text-slate-600">Accesso rapido alle funzionalità correlate all’appuntamento.</p>
+
+          <div class="mt-5 grid gap-2">
+            <a id="btnPreVisit" class="rounded-xl border px-4 py-3 hover:bg-slate-50" href="./pretriage.html">
+              <div class="font-medium">Informazioni pre-visita</div>
+              <div class="text-xs text-slate-500">compilazione e aggiornamenti</div>
+            </a>
+
+            <a id="btnPayments" class="rounded-xl border px-4 py-3 hover:bg-slate-50" href="./payments.html">
+              <div class="font-medium">Pagamenti</div>
+              <div class="text-xs text-slate-500">stato e operazioni disponibili</div>
+            </a>
+
+            <a class="rounded-xl border px-4 py-3 hover:bg-slate-50" href="./reports.html">
+              <div class="font-medium">Referti</div>
+              <div class="text-xs text-slate-500">documenti disponibili</div>
+            </a>
+          </div>
+        </section>
+      </div>
+
+      <!--
+        Pannello laterale di gestione.
+        Contiene le azioni disponibili sul singolo appuntamento e una nota
+        esplicativa sulle regole applicative che ne determinano l’abilitazione.
+      -->
+      <aside class="rounded-2xl border bg-white p-6 shadow-sm h-fit">
+        <h2 class="text-lg font-semibold">Gestione appuntamento</h2>
+        <p id="actionsHint" class="mt-1 text-sm text-slate-600">Le azioni disponibili dipendono dallo stato e dalla data
+          dell’appuntamento.</p>
+
+        <div class="mt-5 grid gap-2">
+          <button id="btnReschedule" type="button"
+            class="h-11 inline-flex items-center justify-center rounded-xl border bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-100 disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled>
+            Ripianifica
+          </button>
+
+          <button id="btnCancel" type="button"
+            class="h-11 inline-flex items-center justify-center rounded-xl border bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-100 disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled>
+            Annulla
+          </button>
+        </div>
+
+        <!--
+          Box informativo utilizzato per mostrare le regole operative o le
+          condizioni che influenzano la possibilità di modificare l’appuntamento.
+        -->
+        <div id="rulesBox" class="mt-4 rounded-2xl border bg-slate-50 px-4 py-3 text-xs text-slate-600 leading-relaxed">
+          —
+        </div>
+      </aside>
+    </section>
+
+    <!-- Contenitore per errori globali della pagina mostrati lato client -->
+    <div id="pageError" class="hidden mt-6 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700"
+      role="alert" aria-live="polite"></div>
+  </main>
+
+  <!-- Placeholder dei componenti condivisi renderizzati dinamicamente lato client -->
+  <div data-component="footer"></div>
+  <div data-component="modal"></div>
+</body>
+
+</html>

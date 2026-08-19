@@ -1,0 +1,380 @@
+<!--
+  File: frontend/pages/delegate/booking.html
+
+  Scopo
+  -----
+  Definire la pagina dell’area Delegate dedicata alla prenotazione di una
+  prestazione per conto di un assistito, consentendo la selezione del
+  paziente delegante, della prestazione, dell’intervallo temporale di
+  ricerca e dello slot disponibile da confermare.
+
+  Ruolo nel sistema
+  -----------------
+  Questa pagina appartiene all’area Delegate del portale e rappresenta la
+  vista operativa attraverso cui il delegato può effettuare una nuova
+  prenotazione per un assistito per cui dispone di una delega valida e
+  compatibile con l’operazione richiesta. La pagina guida l’utente lungo
+  un flusso strutturato in più fasi: selezione assistito, scelta della
+  prestazione, ricerca disponibilità e conferma finale della prenotazione.
+
+  Note
+  ----
+  Il file contiene il markup strutturale della pagina e i placeholder DOM
+  utilizzati dal relativo script JavaScript. La logica di autenticazione,
+  caricamento delle deleghe, verifica dei permessi, recupero del catalogo
+  prestazioni, filtro delle prestazioni, ricerca delle disponibilità,
+  selezione dello slot, costruzione del riepilogo finale, conferma della
+  prenotazione e gestione degli errori è demandata ai moduli caricati in
+  `../../js/common/` e in `../../js/delegate/booking.js`.
+-->
+
+<!doctype html>
+<html lang="it">
+
+<head>
+  <!-- Metadati di base del documento HTML -->
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Titolo mostrato nella scheda del browser -->
+  <title>Prenotazione | Healthcare Portal</title>
+
+  <!-- Risorse statiche condivise della pagina -->
+  <link rel="icon" href="../../assets/favicon.ico" />
+  <link rel="stylesheet" href="../../css/styles.css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!--
+    Script condivisi e specifici della pagina.
+    Vengono caricati con `defer` per eseguire la logica applicativa
+    dopo il parsing completo del documento HTML.
+  -->
+  <script defer src="../../js/common/utils.js"></script>
+  <script defer src="../../js/common/session.js"></script>
+  <script defer src="../../js/common/auth.js"></script>
+  <script defer src="../../js/common/ui-components.js"></script>
+  <script defer src="../../js/delegate/booking.js"></script>
+</head>
+
+<body class="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
+  <!-- Placeholder del componente navbar condiviso, sostituito dinamicamente lato client -->
+  <div data-component="navbar"></div>
+
+  <!--
+    Contenuto principale della pagina di prenotazione per assistito.
+    Comprende l’intestazione della vista, le sezioni operative del flusso
+    guidato, il pannello laterale di conferma e il contenitore per
+    eventuali errori globali.
+  -->
+  <main class="mx-auto w-full max-w-7xl px-4 py-8 flex-1">
+    <!--
+      Sezione introduttiva della pagina.
+      Presenta il contesto della prenotazione effettuata dal delegato e
+      include i collegamenti rapidi verso appuntamenti dell’assistito e dashboard.
+    -->
+    <section class="rounded-2xl border bg-white p-6 sm:p-8 shadow-sm">
+      <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
+        <div class="flex-1">
+          <div class="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-sm text-blue-700">
+            <span class="h-2 w-2 rounded-full bg-blue-600"></span>
+            Prenotazione assistito
+          </div>
+
+          <h1 class="mt-4 text-2xl sm:text-3xl font-semibold tracking-tight">Prenota per assistito</h1>
+
+          <p class="mt-2 text-slate-600 leading-relaxed">
+            Selezioni l’assistito, scelga la prestazione, cerchi le disponibilità e confermi lo slot preferito.
+          </p>
+
+          <!--
+            Badge riepilogativo dell’assistito attualmente selezionato.
+            Viene mostrato lato client quando il contesto della prenotazione
+            è stato associato a un paziente delegante specifico.
+          -->
+          <div id="selectedPatientPill"
+            class="hidden mt-4 inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-sm text-slate-700">
+            <span class="h-2 w-2 rounded-full bg-slate-500"></span>
+            <span id="selectedPatientLabel">—</span>
+          </div>
+        </div>
+
+        <!-- Azioni rapide verso appuntamenti dell’assistito e dashboard del delegato -->
+        <div class="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
+          <a id="appointmentsLink" href="./appointments.html"
+            class="h-10 inline-flex items-center justify-center rounded-xl border bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-100">
+            Appuntamenti assistito
+          </a>
+
+          <a href="./dashboard.html"
+            class="h-10 inline-flex items-center justify-center rounded-xl border bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-100">
+            Dashboard
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!--
+      Layout principale del flusso di prenotazione.
+      La colonna sinistra contiene le fasi operative guidate, mentre la
+      colonna destra ospita il riepilogo e l’azione finale di conferma.
+    -->
+    <section class="mt-6 grid gap-4 lg:grid-cols-3">
+      <div class="lg:col-span-2 grid gap-4">
+        <!--
+          Fase 1 del flusso: selezione dell’assistito.
+          Consente di scegliere il paziente per cui il delegato vuole
+          effettuare la prenotazione e di verificare l’idoneità della delega.
+        -->
+        <section class="rounded-2xl border bg-white p-6 shadow-sm">
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <h2 class="text-lg font-semibold">1) Selezione assistito</h2>
+              <p class="mt-1 text-sm text-slate-600">Scelga l’assistito per cui effettuare la prenotazione.</p>
+            </div>
+
+            <!-- Indicatore di caricamento relativo al recupero delle deleghe -->
+            <div id="delLoadingBadge"
+              class="hidden inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-sm text-slate-700">
+              <span class="h-2 w-2 rounded-full bg-slate-500 animate-pulse"></span>
+              Caricamento…
+            </div>
+          </div>
+
+          <div class="mt-5">
+            <label class="text-sm font-medium text-slate-700" for="patientSelect">Assistito</label>
+
+            <div class="mt-2 flex flex-col sm:flex-row sm:items-center gap-2">
+              <select id="patientSelect"
+                class="h-11 w-full rounded-xl border bg-white px-4 text-sm focus:outline-none focus:ring-4 focus:ring-blue-100">
+                <option value="">Caricamento…</option>
+              </select>
+
+              <button id="btnReloadDelegations" type="button"
+                class="h-11 w-full sm:w-auto inline-flex items-center justify-center rounded-xl border bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-100">
+                Aggiorna
+              </button>
+            </div>
+
+            <p id="delegationHint" class="mt-1 text-xs text-slate-500">
+              Selezioni un assistito per proseguire.
+            </p>
+          </div>
+
+          <!--
+            Messaggio mostrato quando la delega selezionata non consente
+            la prenotazione oppure quando mancano i permessi necessari.
+          -->
+          <div id="permissionBox" class="hidden mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4">
+            <div class="text-sm font-medium text-amber-900">Prenotazione non disponibile</div>
+            <div id="permissionText" class="mt-1 text-sm text-amber-800 leading-relaxed">—</div>
+          </div>
+        </section>
+
+        <!--
+          Fase 2 del flusso: selezione della prestazione.
+          Consente di scegliere la prestazione dal catalogo disponibile
+          e di consultarne i principali dettagli informativi.
+        -->
+        <section class="rounded-2xl border bg-white p-6 shadow-sm">
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <h2 class="text-lg font-semibold">2) Selezione prestazione</h2>
+              <p class="mt-1 text-sm text-slate-600">Scelga la prestazione da prenotare.</p>
+            </div>
+
+            <!-- Indicatore di caricamento relativo al catalogo prestazioni -->
+            <div id="svcLoadingBadge"
+              class="hidden inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-sm text-slate-700">
+              <span class="h-2 w-2 rounded-full bg-slate-500 animate-pulse"></span>
+              Caricamento…
+            </div>
+          </div>
+
+          <div class="mt-5 grid gap-3 sm:grid-cols-12">
+            <div class="sm:col-span-7">
+              <label class="text-sm font-medium text-slate-700" for="serviceSelect">Prestazione</label>
+              <select id="serviceSelect"
+                class="mt-2 h-11 w-full rounded-xl border bg-white px-4 text-sm focus:outline-none focus:ring-4 focus:ring-blue-100">
+                <option value="">Selezioni una prestazione…</option>
+              </select>
+              <div class="mt-1 text-xs text-slate-500">
+                È possibile consultare il catalogo completo nella sezione Prestazioni.
+              </div>
+            </div>
+
+            <div class="sm:col-span-5">
+              <label class="text-sm font-medium text-slate-700" for="serviceSearch">Ricerca</label>
+              <input id="serviceSearch" type="search" autocomplete="off" placeholder="Cerca nel catalogo…"
+                class="mt-2 h-11 w-full rounded-xl border px-4 text-sm focus:outline-none focus:ring-4 focus:ring-blue-100" />
+              <div class="mt-1 text-xs text-slate-500">Filtra l’elenco per nome o descrizione.</div>
+            </div>
+          </div>
+
+          <!--
+            Riquadro di dettaglio della prestazione selezionata.
+            Mostra nome, codice, costo indicativo e descrizione sintetica.
+          -->
+          <div id="svcDetails" class="mt-5 rounded-2xl border bg-slate-50 p-5">
+            <div class="text-xs font-medium text-slate-500">Dettagli prestazione</div>
+
+            <div class="mt-3 grid gap-2 text-sm">
+              <div class="flex items-start justify-between gap-4">
+                <span class="text-slate-500">Nome</span>
+                <span id="svcName" class="font-medium text-slate-800 text-right">—</span>
+              </div>
+
+              <div class="flex items-start justify-between gap-4">
+                <span class="text-slate-500">Codice</span>
+                <span id="svcCode" class="font-medium text-slate-800 text-right">—</span>
+              </div>
+
+              <div class="flex items-start justify-between gap-4">
+                <span class="text-slate-500">Costo indicativo</span>
+                <span id="svcPrice" class="font-medium text-slate-800 text-right">—</span>
+              </div>
+            </div>
+
+            <div class="mt-4 text-sm text-slate-600 leading-relaxed">
+              <span id="svcDesc">Selezioni una prestazione per visualizzare i dettagli.</span>
+            </div>
+          </div>
+        </section>
+
+        <!--
+          Fase 3 del flusso: ricerca delle disponibilità.
+          Consente di impostare l’intervallo temporale e visualizzare
+          gli slot disponibili per la prestazione selezionata.
+        -->
+        <section class="rounded-2xl border bg-white p-6 shadow-sm">
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <h2 class="text-lg font-semibold">3) Disponibilità</h2>
+              <p class="mt-1 text-sm text-slate-600">Selezioni l’intervallo di date e consulti gli slot disponibili.</p>
+            </div>
+
+            <!-- Indicatore di caricamento relativo alla ricerca delle disponibilità -->
+            <div id="avLoadingBadge"
+              class="hidden inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-sm text-slate-700">
+              <span class="h-2 w-2 rounded-full bg-slate-500 animate-pulse"></span>
+              Ricerca…
+            </div>
+          </div>
+
+          <div class="mt-5 grid gap-3 sm:grid-cols-12 items-end">
+            <div class="sm:col-span-5">
+              <label class="text-sm font-medium text-slate-700" for="fromDate">Da</label>
+              <input id="fromDate" type="date"
+                class="mt-2 h-11 w-full rounded-xl border px-4 text-sm focus:outline-none focus:ring-4 focus:ring-blue-100" />
+            </div>
+
+            <div class="sm:col-span-5">
+              <label class="text-sm font-medium text-slate-700" for="toDate">A</label>
+              <input id="toDate" type="date"
+                class="mt-2 h-11 w-full rounded-xl border px-4 text-sm focus:outline-none focus:ring-4 focus:ring-blue-100" />
+            </div>
+
+            <div class="sm:col-span-2">
+              <button id="btnSearchAvailability" type="button"
+                class="h-11 w-full inline-flex items-center justify-center rounded-xl bg-blue-600 px-4 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-100">
+                Cerca
+              </button>
+            </div>
+          </div>
+
+          <!--
+            Stato vuoto mostrato quando la ricerca non restituisce slot disponibili
+            nel periodo selezionato.
+          -->
+          <div id="availabilityEmpty" class="hidden mt-5 rounded-2xl border bg-slate-50 p-6">
+            <div class="text-sm font-medium text-slate-800">Nessuna disponibilità trovata</div>
+            <div class="mt-1 text-sm text-slate-600">
+              Provi a estendere l’intervallo di date oppure ripeta la ricerca.
+            </div>
+          </div>
+
+          <!--
+            Contenitore dinamico delle disponibilità.
+            Viene popolato lato client con gli slot trovati oppure con i
+            relativi placeholder di stato.
+          -->
+          <div id="availabilityHost" class="mt-5 grid gap-4">
+            <div class="text-sm text-slate-600">
+              Selezioni assistito e prestazione, quindi avvii la ricerca delle disponibilità.
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <!--
+        Colonna laterale del flusso.
+        Mostra il riepilogo finale della prenotazione, le note opzionali
+        e l’azione conclusiva di conferma.
+      -->
+      <aside class="rounded-2xl border bg-white p-6 shadow-sm h-fit">
+        <h2 class="text-lg font-semibold">4) Conferma</h2>
+        <p class="mt-1 text-sm text-slate-600">Verifichi i dettagli e confermi la prenotazione.</p>
+
+        <!--
+          Riepilogo della prenotazione in costruzione.
+          Viene aggiornato dinamicamente in base ad assistito, prestazione
+          e slot selezionati nel corso del flusso.
+        -->
+        <div class="mt-5 rounded-2xl border bg-slate-50 p-5">
+          <div class="text-xs font-medium text-slate-500">Riepilogo</div>
+
+          <div class="mt-3 grid gap-3 text-sm">
+            <div class="flex items-start justify-between gap-4">
+              <span class="text-slate-500">Assistito</span>
+              <span id="sumPatient" class="font-medium text-slate-800 text-right">—</span>
+            </div>
+
+            <div class="flex items-start justify-between gap-4">
+              <span class="text-slate-500">Prestazione</span>
+              <span id="sumService" class="font-medium text-slate-800 text-right">—</span>
+            </div>
+
+            <div class="flex items-start justify-between gap-4">
+              <span class="text-slate-500">Data/ora</span>
+              <span id="sumWhen" class="font-medium text-slate-800 text-right">—</span>
+            </div>
+
+            <div class="flex items-start justify-between gap-4">
+              <span class="text-slate-500">Costo indicativo</span>
+              <span id="sumPrice" class="font-medium text-slate-800 text-right">—</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Campo note facoltative associabili alla prenotazione -->
+        <div class="mt-5">
+          <label class="text-sm font-medium text-slate-700" for="notes">Note (opzionale)</label>
+          <textarea id="notes" rows="4" maxlength="800"
+            class="mt-2 w-full rounded-xl border px-4 py-3 text-sm focus:outline-none focus:ring-4 focus:ring-blue-100"
+            placeholder="Aggiungere eventuali informazioni utili…"></textarea>
+          <div class="mt-1 text-xs text-slate-500">Le note verranno associate alla prenotazione.</div>
+        </div>
+
+        <!-- Pulsante finale di conferma della prenotazione -->
+        <button id="btnConfirm" type="button"
+          class="mt-5 h-11 w-full inline-flex items-center justify-center rounded-xl bg-blue-600 px-5 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-100">
+          Conferma prenotazione
+        </button>
+
+        <!-- Messaggio guida mostrato quando i prerequisiti di conferma non sono ancora soddisfatti -->
+        <div id="confirmHint" class="mt-3 text-xs text-slate-500 leading-relaxed">
+          La conferma è disponibile dopo la selezione di assistito, prestazione e slot.
+        </div>
+      </aside>
+    </section>
+
+    <!-- Contenitore per errori globali della pagina mostrati lato client -->
+    <div id="pageError" class="hidden mt-6 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700"
+      role="alert" aria-live="polite"></div>
+  </main>
+
+  <!-- Placeholder dei componenti condivisi renderizzati dinamicamente lato client -->
+  <div data-component="footer"></div>
+  <div data-component="modal"></div>
+</body>
+
+</html>

@@ -1,0 +1,74 @@
+<!--
+  File: frontend/_errors/404.html
+
+  Scopo
+  -----
+  Presentare una pagina di errore dedicata ai casi in cui l’utente o il browser
+  richiedono una risorsa non presente o non raggiungibile all’interno del portale.
+
+  Ruolo nel sistema
+  -----------------
+  Questa pagina fornisce un feedback chiaro in caso di risorsa inesistente,
+  mantenendo coerenza visiva con il resto del front-end e offrendo all’utente
+  azioni semplici per proseguire la navigazione.
+
+  Note
+  ----
+  Il file è statico e ha finalità esclusivamente informativa: non contiene logica
+  applicativa, salvo l’azione locale del pulsante "Indietro" che richiama la
+  cronologia del browser.
+-->
+
+<!doctype html>
+<html lang="it">
+
+<head>
+  <!-- Metadati di base del documento HTML -->
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Titolo mostrato nella scheda del browser -->
+  <title>Pagina non trovata | Healthcare Portal</title>
+
+  <!-- Risorse statiche condivise -->
+  <link rel="stylesheet" href="/css/styles.css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="min-h-screen bg-slate-50 text-slate-900">
+  <!--
+    Contenuto principale della pagina di errore.
+    Comunica che la risorsa richiesta non esiste e propone due azioni:
+    ritorno alla home oppure ritorno alla pagina precedente.
+  -->
+  <main class="mx-auto max-w-3xl px-4 py-12">
+    <div class="rounded-2xl border bg-white p-8 shadow-sm">
+      <!-- Etichetta visiva che identifica immediatamente il codice di errore -->
+      <div class="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-sm text-slate-700">
+        <span class="h-2 w-2 rounded-full bg-slate-500"></span>
+        404
+      </div>
+
+      <!-- Messaggio principale mostrato all’utente -->
+      <h1 class="mt-4 text-2xl sm:text-3xl font-semibold tracking-tight">Pagina non trovata</h1>
+      <p class="mt-2 text-slate-600 leading-relaxed">
+        Il contenuto richiesto non è disponibile o l’indirizzo non è corretto.
+      </p>
+
+      <!-- Azioni di recupero disponibili dopo l’errore -->
+      <div class="mt-6 flex flex-col sm:flex-row gap-3">
+        <a class="h-11 inline-flex items-center justify-center rounded-xl bg-blue-600 px-5 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-100"
+          href="/index.html">
+          Torna alla home
+        </a>
+        <button
+          class="h-11 rounded-xl border px-5 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-100"
+          type="button" onclick="history.back()">
+          Indietro
+        </button>
+      </div>
+    </div>
+  </main>
+</body>
+
+</html>

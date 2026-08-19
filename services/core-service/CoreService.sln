@@ -1,0 +1,78 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+
+# File: services/core-service/CoreService.sln
+#
+# Scopo:
+# Definire la solution Visual Studio del Core Service, aggregando i progetti
+# principali del servizio e le relative configurazioni di build utilizzate
+# durante sviluppo, compilazione e pubblicazione.
+#
+# Ruolo nel sistema:
+# Questo file rappresenta il punto di coordinamento dell’intera codebase
+# .NET del Core Service. Collega i layer Api, Application, Infrastructure
+# e Domain in un’unica solution, così da consentire apertura coerente
+# nell’IDE, restore centralizzato, build multi-progetto e gestione unificata
+# delle configurazioni Debug e Release.
+#
+# Note:
+# - La solution include quattro progetti distinti, corrispondenti ai layer
+#   architetturali principali del Core Service.
+# - Le configurazioni `Debug|Any CPU` e `Release|Any CPU` sono applicate
+#   in modo uniforme a tutti i progetti inclusi.
+# - Gli identificativi GUID associati ai progetti servono a Visual Studio
+#   per tracciare in modo stabile i riferimenti interni alla solution.
+
+# Progetto API:
+# espone gli endpoint HTTP e costituisce il punto di ingresso del Core Service.
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CoreService.Api", "src\CoreService.Api\CoreService.Api.csproj", "{A36C9F14-0B4F-4AE9-9F0A-2B9E1C43A1A1}"
+EndProject
+
+# Progetto Application:
+# contiene servizi applicativi, orchestrazione dei casi d’uso e contratti.
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CoreService.Application", "src\CoreService.Application\CoreService.Application.csproj", "{3F0B13E3-43B9-4F5A-9C52-9A5D2B2E45D3}"
+EndProject
+
+# Progetto Infrastructure:
+# implementa persistenza, integrazioni e dettagli infrastrutturali concreti.
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CoreService.Infrastructure", "src\CoreService.Infrastructure\CoreService.Infrastructure.csproj", "{5F7E4F4C-33E5-45B6-AE9D-8F2EFC2A0BB5}"
+EndProject
+
+# Progetto Domain:
+# contiene entità, value object, enum e logica di dominio centrale.
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CoreService.Domain", "src\CoreService.Domain\CoreService.Domain.csproj", "{1F6B0B45-48D0-4E8B-A56B-0C83B8C07A1D}"
+EndProject
+
+Global
+  # Configurazioni globali della solution disponibili prima del caricamento dei progetti.
+  GlobalSection(SolutionConfigurationPlatforms) = preSolution
+    Debug|Any CPU = Debug|Any CPU
+    Release|Any CPU = Release|Any CPU
+  EndGlobalSection
+
+  # Associazione delle configurazioni di solution alle configurazioni effettive
+  # di ciascun progetto incluso nella solution.
+  GlobalSection(ProjectConfigurationPlatforms) = postSolution
+    {A36C9F14-0B4F-4AE9-9F0A-2B9E1C43A1A1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+    {A36C9F14-0B4F-4AE9-9F0A-2B9E1C43A1A1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+    {A36C9F14-0B4F-4AE9-9F0A-2B9E1C43A1A1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+    {A36C9F14-0B4F-4AE9-9F0A-2B9E1C43A1A1}.Release|Any CPU.Build.0 = Release|Any CPU
+
+    {3F0B13E3-43B9-4F5A-9C52-9A5D2B2E45D3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+    {3F0B13E3-43B9-4F5A-9C52-9A5D2B2E45D3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+    {3F0B13E3-43B9-4F5A-9C52-9A5D2B2E45D3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+    {3F0B13E3-43B9-4F5A-9C52-9A5D2B2E45D3}.Release|Any CPU.Build.0 = Release|Any CPU
+
+    {5F7E4F4C-33E5-45B6-AE9D-8F2EFC2A0BB5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+    {5F7E4F4C-33E5-45B6-AE9D-8F2EFC2A0BB5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+    {5F7E4F4C-33E5-45B6-AE9D-8F2EFC2A0BB5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+    {5F7E4F4C-33E5-45B6-AE9D-8F2EFC2A0BB5}.Release|Any CPU.Build.0 = Release|Any CPU
+
+    {1F6B0B45-48D0-4E8B-A56B-0C83B8C07A1D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+    {1F6B0B45-48D0-4E8B-A56B-0C83B8C07A1D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+    {1F6B0B45-48D0-4E8B-A56B-0C83B8C07A1D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+    {1F6B0B45-48D0-4E8B-A56B-0C83B8C07A1D}.Release|Any CPU.Build.0 = Release|Any CPU
+  EndGlobalSection
+EndGlobal

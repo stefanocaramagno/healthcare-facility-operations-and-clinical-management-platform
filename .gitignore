@@ -1,0 +1,62 @@
+# File: .gitignore
+#
+# Scopo
+# -----
+# Definire l’elenco di file e directory che non devono essere tracciati
+# dal versionamento Git, escludendo artefatti di sistema, file temporanei,
+# output di build, cache locali e risorse generate automaticamente.
+#
+# Ruolo nel sistema
+# -----------------
+# Questo file regola il perimetro dei contenuti effettivamente versionati
+# nella repository del progetto, evitando che file dipendenti dall’ambiente
+# locale, dal sistema operativo, dagli IDE o dai processi di build
+# contaminino la codebase condivisa.
+#
+# Note
+# ----
+# - Le regole coprono principalmente file di sistema, cache Python,
+#   output di build .NET e file temporanei di strumenti locali.
+# - Sono escluse anche directory di cache pesanti come `hf_cache`,
+#   non adatte a essere mantenute sotto controllo versione.
+# - Alcune regole sono ricorsive per applicarsi uniformemente
+#   a più sottoprogetti della repository.
+
+# File generati automaticamente dal sistema operativo macOS e Windows.
+.DS_Store
+Thumbs.db
+
+# Cache Python, bytecode compilato e database SQLite locali.
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.sqlite3
+
+# Output di build .NET e file utente/IDE generati da Visual Studio.
+**/bin/
+**/obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Output binari generici e artefatti eseguibili locali.
+**/bin/
+*.exe
+*.out
+
+# File di log locali generati da Visual Studio Code.
+.vscode/*.log
+
+# Esclusione de file di configurazioni locale e ambientali
+.env
+
+# Esclusione ricorsiva dei file `.dockerignore` nei sottoprogetti.
+**/.dockerignore
+
+# Cache locale dei modelli o artefatti Hugging Face.
+hf_cache/
+**/hf_cache/
+!hf_cache/.gitkeep
+!**/hf_cache/.gitkeep

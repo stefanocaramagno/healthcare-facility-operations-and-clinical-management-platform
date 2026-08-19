@@ -1,0 +1,363 @@
+<!--
+  File: frontend/pages/admin/slots.html
+
+  Scopo
+  -----
+  Definire la pagina amministrativa dedicata alla gestione degli slot clinici,
+  consentendo la selezione del clinico, il filtraggio per intervallo temporale
+  e stato, la generazione massiva di nuovi slot e la consultazione operativa
+  degli slot già presenti nel sistema.
+
+  Ruolo nel sistema
+  -----------------
+  Questa pagina appartiene all’area Admin del portale e rappresenta il punto
+  di accesso per la pianificazione della disponibilità clinica. Permette
+  all’operatore amministrativo di configurare finestre temporali di disponibilità
+  per i clinici e di governare gli slot che saranno poi utilizzati durante
+  il processo di prenotazione.
+
+  Note
+  ----
+  Il file contiene il markup strutturale della pagina e i placeholder DOM
+  necessari alla logica JavaScript associata. La gestione dell’autenticazione,
+  del bootstrap dei componenti condivisi, del caricamento degli slot, della
+  generazione automatica e delle operazioni di aggiornamento è demandata ai
+  moduli caricati in `../../js/common/` e `../../js/admin/slots.js`.
+-->
+
+<!doctype html>
+<html lang="it">
+
+<head>
+  <!-- Metadati di base del documento HTML -->
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Titolo mostrato nella scheda del browser -->
+  <title>Slot | Healthcare Portal</title>
+
+  <!-- Risorse statiche condivise della pagina -->
+  <link rel="icon" href="../../assets/favicon.ico" />
+  <link rel="stylesheet" href="../../css/styles.css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!--
+    Script condivisi e specifici della pagina.
+    Vengono caricati con `defer` per eseguire la logica applicativa
+    dopo il parsing completo del documento HTML.
+  -->
+  <script defer src="../../js/common/utils.js"></script>
+  <script defer src="../../js/common/session.js"></script>
+  <script defer src="../../js/common/auth.js"></script>
+  <script defer src="../../js/common/ui-components.js"></script>
+  <script defer src="../../js/admin/slots.js"></script>
+</head>
+
+<body class="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
+  <!-- Placeholder del componente navbar condiviso, sostituito dinamicamente lato client -->
+  <div data-component="navbar"></div>
+
+  <!--
+    Contenuto principale della pagina di gestione slot.
+    Comprende la sezione introduttiva con filtri e contatori, il pannello di
+    generazione degli slot e la tabella degli slot esistenti.
+  -->
+  <main class="mx-auto w-full max-w-7xl px-4 py-8 flex-1">
+    <!--
+      Sezione introduttiva della pagina.
+      Presenta il contesto operativo, le azioni di navigazione correlate,
+      i filtri principali e il riepilogo statistico degli slot caricati.
+    -->
+    <section class="rounded-2xl border bg-white p-6 sm:p-8 shadow-sm">
+      <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
+        <div class="flex-1">
+          <div class="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-sm text-blue-700">
+            <span class="h-2 w-2 rounded-full bg-blue-600"></span>
+            Scheduling
+          </div>
+
+          <h1 class="mt-4 text-2xl sm:text-3xl font-semibold tracking-tight">Gestione slot clinici</h1>
+
+          <p class="mt-2 text-slate-600 leading-relaxed">
+            Creazione e gestione degli slot di disponibilità per i clinici. Gli slot in stato <span
+              class="font-medium text-slate-800">Available</span> saranno visibili in fase di prenotazione.
+          </p>
+
+          <!-- Etichetta contestuale che mostra il clinico attualmente selezionato -->
+          <div id="selectedClinicianPill"
+            class="hidden mt-4 inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-sm text-slate-700">
+            <span class="h-2 w-2 rounded-full bg-slate-500"></span>
+            <span id="selectedClinicianLabel">—</span>
+          </div>
+        </div>
+
+        <!-- Azioni rapide verso le aree operative collegate agli slot -->
+        <div class="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
+          <a href="./appointments.html"
+            class="h-10 inline-flex items-center justify-center rounded-xl border bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-100">
+            Appuntamenti
+          </a>
+          <a href="./booking.html"
+            class="h-10 inline-flex items-center justify-center rounded-xl bg-blue-600 px-4 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-100">
+            Prenota per paziente
+          </a>
+        </div>
+      </div>
+
+      <!--
+        Area filtri principali.
+        Consente di selezionare il clinico, definire l’intervallo temporale
+        di consultazione, filtrare per stato e aggiornare l’elenco.
+      -->
+      <div class="mt-6 grid gap-3 lg:grid-cols-12">
+        <div class="lg:col-span-5">
+          <label class="text-sm font-medium text-slate-700" for="clinicianSelect">Clinico</label>
+          <select id="clinicianSelect"
+            class="mt-2 h-11 w-full rounded-xl border bg-white px-4 text-sm focus:outline-none focus:ring-4 focus:ring-blue-100">
+            <option value="">Selezioni un clinico…</option>
+          </select>
+        </div>
+
+        <div class="lg:col-span-2">
+          <label class="text-sm font-medium text-slate-700" for="fromDate">Da</label>
+          <input id="fromDate" type="date"
+            class="mt-2 h-11 w-full rounded-xl border px-4 text-sm focus:outline-none focus:ring-4 focus:ring-blue-100" />
+        </div>
+
+        <div class="lg:col-span-2">
+          <label class="text-sm font-medium text-slate-700" for="toDate">A</label>
+          <input id="toDate" type="date"
+            class="mt-2 h-11 w-full rounded-xl border px-4 text-sm focus:outline-none focus:ring-4 focus:ring-blue-100" />
+        </div>
+
+        <div class="lg:col-span-2">
+          <label class="text-sm font-medium text-slate-700" for="statusSelect">Stato</label>
+          <select id="statusSelect"
+            class="mt-2 h-11 w-full rounded-xl border bg-white px-4 text-sm focus:outline-none focus:ring-4 focus:ring-blue-100">
+            <option value="ALL">Tutti</option>
+            <option value="Available">Disponibili</option>
+            <option value="Reserved">Riservati</option>
+            <option value="Unavailable">Non disponibili</option>
+          </select>
+        </div>
+
+        <div class="lg:col-span-1 flex items-end">
+          <button id="btnRefresh" type="button"
+            class="h-11 w-full inline-flex items-center justify-center rounded-xl border bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-100">
+            Aggiorna
+          </button>
+        </div>
+      </div>
+
+      <!--
+        Riepilogo sintetico degli slot attualmente caricati.
+        Include badge di caricamento e contatori aggregati per stato.
+      -->
+      <div class="mt-5">
+        <div id="loadingBadge"
+          class="hidden mb-2 inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-sm text-slate-700">
+          <span class="h-2 w-2 rounded-full bg-slate-500 animate-pulse"></span>
+          Caricamento…
+        </div>
+
+        <div class="grid grid-cols-4 gap-2 sm:w-[750px]">
+          <div class="rounded-xl border bg-slate-50 px-4 py-3">
+            <div class="text-xs text-slate-500">Totali</div>
+            <div id="statTotal" class="mt-1 text-lg font-semibold">—</div>
+          </div>
+          <div class="rounded-xl border bg-slate-50 px-4 py-3">
+            <div class="text-xs text-slate-500">Available</div>
+            <div id="statAvailable" class="mt-1 text-lg font-semibold">—</div>
+          </div>
+          <div class="rounded-xl border bg-slate-50 px-4 py-3">
+            <div class="text-xs text-slate-500">Reserved</div>
+            <div id="statReserved" class="mt-1 text-lg font-semibold">—</div>
+          </div>
+          <div class="rounded-xl border bg-slate-50 px-4 py-3">
+            <div class="text-xs text-slate-500">Unavailable</div>
+            <div id="statUnavailable" class="mt-1 text-lg font-semibold">—</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!--
+      Area operativa principale della pagina.
+      A sinistra viene mostrato il pannello di generazione automatica degli slot,
+      a destra la tabella di consultazione e gestione degli slot esistenti.
+    -->
+    <section class="mt-6 grid gap-4 lg:grid-cols-3">
+      <!--
+        Pannello di generazione slot.
+        Consente di definire un intervallo di date, fascia oraria, durata,
+        stato iniziale e giorni della settimana per creare più slot in blocco.
+      -->
+      <section class="lg:col-span-1 rounded-2xl border bg-white p-6 shadow-sm">
+        <h2 class="text-lg font-semibold">Genera slot</h2>
+        <p class="mt-1 text-sm text-slate-600">
+          Generi automaticamente slot in un intervallo di date, con durata e fascia oraria configurabili.
+        </p>
+
+        <div class="mt-5 grid gap-3">
+          <!-- Intervallo di date per la generazione -->
+          <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+            <div>
+              <label class="text-sm font-medium text-slate-700" for="genFromDate">Da</label>
+              <input id="genFromDate" type="date"
+                class="mt-2 h-11 w-full rounded-xl border px-4 text-sm focus:outline-none focus:ring-4 focus:ring-blue-100" />
+            </div>
+            <div>
+              <label class="text-sm font-medium text-slate-700" for="genToDate">A</label>
+              <input id="genToDate" type="date"
+                class="mt-2 h-11 w-full rounded-xl border px-4 text-sm focus:outline-none focus:ring-4 focus:ring-blue-100" />
+            </div>
+          </div>
+
+          <!-- Fascia oraria giornaliera di generazione -->
+          <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+            <div>
+              <label class="text-sm font-medium text-slate-700" for="dayStartTime">Inizio fascia</label>
+              <input id="dayStartTime" type="time"
+                class="mt-2 h-11 w-full rounded-xl border px-4 text-sm focus:outline-none focus:ring-4 focus:ring-blue-100" />
+            </div>
+            <div>
+              <label class="text-sm font-medium text-slate-700" for="dayEndTime">Fine fascia</label>
+              <input id="dayEndTime" type="time"
+                class="mt-2 h-11 w-full rounded-xl border px-4 text-sm focus:outline-none focus:ring-4 focus:ring-blue-100" />
+            </div>
+          </div>
+
+          <!-- Parametri di durata e stato iniziale -->
+          <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+            <div>
+              <label class="text-sm font-medium text-slate-700" for="slotDuration">Durata slot (min)</label>
+              <select id="slotDuration"
+                class="mt-2 h-11 w-full rounded-xl border bg-white px-4 text-sm focus:outline-none focus:ring-4 focus:ring-blue-100">
+                <option value="15">15</option>
+                <option value="20">20</option>
+                <option value="30" selected>30</option>
+                <option value="45">45</option>
+                <option value="60">60</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="text-sm font-medium text-slate-700" for="defaultStatus">Stato iniziale</label>
+              <select id="defaultStatus"
+                class="mt-2 h-11 w-full rounded-xl border bg-white px-4 text-sm focus:outline-none focus:ring-4 focus:ring-blue-100">
+                <option value="Available" selected>Available</option>
+                <option value="Unavailable">Unavailable</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Selezione dei giorni della settimana da includere nella generazione -->
+          <div class="rounded-2xl border bg-slate-50 p-4">
+            <div class="text-sm font-semibold text-slate-900">Giorni della settimana</div>
+            <div class="mt-3 grid grid-cols-2 gap-2 text-sm text-slate-700">
+              <label class="inline-flex items-center gap-2">
+                <input id="wdMon" type="checkbox" class="h-4 w-4 rounded border-slate-300" checked />
+                Lun
+              </label>
+              <label class="inline-flex items-center gap-2">
+                <input id="wdTue" type="checkbox" class="h-4 w-4 rounded border-slate-300" checked />
+                Mar
+              </label>
+              <label class="inline-flex items-center gap-2">
+                <input id="wdWed" type="checkbox" class="h-4 w-4 rounded border-slate-300" checked />
+                Mer
+              </label>
+              <label class="inline-flex items-center gap-2">
+                <input id="wdThu" type="checkbox" class="h-4 w-4 rounded border-slate-300" checked />
+                Gio
+              </label>
+              <label class="inline-flex items-center gap-2">
+                <input id="wdFri" type="checkbox" class="h-4 w-4 rounded border-slate-300" checked />
+                Ven
+              </label>
+              <label class="inline-flex items-center gap-2">
+                <input id="wdSat" type="checkbox" class="h-4 w-4 rounded border-slate-300" />
+                Sab
+              </label>
+              <label class="inline-flex items-center gap-2">
+                <input id="wdSun" type="checkbox" class="h-4 w-4 rounded border-slate-300" />
+                Dom
+              </label>
+            </div>
+          </div>
+
+          <!-- Testo di anteprima/stima della generazione degli slot -->
+          <div id="genPreview" class="text-xs text-slate-600">
+            Compili i parametri per visualizzare una stima del numero di slot.
+          </div>
+
+          <!-- Pulsante di avvio della generazione -->
+          <button id="btnGenerate" type="button"
+            class="h-11 inline-flex items-center justify-center rounded-xl bg-blue-600 px-5 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-100">
+            Crea slot
+          </button>
+
+          <!-- Contenitore dedicato agli errori di validazione/generazione -->
+          <div id="genError" class="hidden rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+            role="alert"></div>
+        </div>
+      </section>
+
+      <!--
+        Sezione di consultazione degli slot esistenti.
+        Mostra l’elenco degli slot nel periodo selezionato e consente
+        l’esecuzione delle azioni operative lato amministratore.
+      -->
+      <section class="lg:col-span-2 rounded-2xl border bg-white p-6 sm:p-8 shadow-sm">
+        <div class="flex items-start justify-between gap-4">
+          <div>
+            <h2 class="text-lg font-semibold">Elenco slot</h2>
+            <p class="mt-1 text-sm text-slate-600">
+              Gestione degli slot nel periodo selezionato. È possibile rendere uno slot non disponibile (Unavailable) o
+              riattivarlo (Available).
+            </p>
+          </div>
+        </div>
+
+        <!-- Stato vuoto mostrato quando non ci sono slot da visualizzare -->
+        <div id="emptyState" class="hidden mt-6 rounded-2xl border bg-slate-50 p-6">
+          <div class="text-sm font-medium text-slate-800">Nessuno slot trovato</div>
+          <div class="mt-1 text-sm text-slate-600">
+            Selezioni un clinico e un intervallo di date, oppure crei nuovi slot.
+          </div>
+        </div>
+
+        <!-- Tabella principale degli slot -->
+        <div class="mt-6 overflow-x-auto">
+          <table class="min-w-full text-sm">
+            <thead>
+              <tr class="text-left text-xs text-slate-500 border-b">
+                <th class="py-3 pr-4 font-medium">Data/ora</th>
+                <th class="py-3 pr-4 font-medium">Stato</th>
+                <th class="py-3 pr-4 font-medium">Riferimento</th>
+                <th class="py-3 text-right font-medium">Azioni</th>
+              </tr>
+            </thead>
+
+            <!-- Corpo tabella popolato dinamicamente dallo script di pagina -->
+            <tbody id="slotsTbody" class="divide-y">
+              <tr>
+                <td colspan="4" class="py-6 text-center text-slate-600">Selezioni un clinico per caricare gli slot…</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </section>
+
+    <!-- Contenitore dedicato a eventuali errori globali della pagina -->
+    <div id="pageError" class="hidden mt-6 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700"
+      role="alert" aria-live="polite"></div>
+  </main>
+
+  <!-- Placeholder dei componenti condivisi sostituiti dinamicamente lato client -->
+  <div data-component="footer"></div>
+  <div data-component="modal"></div>
+</body>
+
+</html>

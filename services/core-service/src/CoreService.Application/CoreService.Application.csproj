@@ -1,0 +1,71 @@
+<!--
+  File: services/core-service/src/CoreService.Application/CoreService.Application.csproj
+
+  Scopo:
+  Definire il progetto .NET del layer Application del Core Service,
+  specificando SDK utilizzato, target framework, impostazioni di compilazione,
+  riferimenti ai progetti interni e dipendenze necessarie ai servizi
+  applicativi e all’orchestrazione dei casi d’uso del sistema.
+
+  Ruolo nel sistema:
+  Questo file configura il progetto `CoreService.Application`, cioè il layer
+  applicativo del Core Service. Il progetto ospita servizi di applicazione,
+  contratti, orchestrazione dei flussi e coordinamento delle operazioni
+  di dominio, mantenendo il collegamento con il progetto Domain e con
+  le dipendenze framework necessarie alla logica applicativa.
+
+  Note:
+  Il progetto utilizza `Microsoft.NET.Sdk`, quindi non è configurato come
+  host web ma come libreria applicativa. Il riferimento al progetto Domain
+  consente l’uso delle astrazioni e dei modelli di dominio, mentre le
+  dipendenze aggiuntive supportano l’integrazione con ASP.NET Core e
+  con Entity Framework Core nei servizi applicativi.
+-->
+
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Proprietà generali del progetto.
+    Definiscono framework di destinazione e principali impostazioni
+    di compilazione e qualità del codice.
+  -->
+  <PropertyGroup>
+    <!-- Target framework .NET utilizzato dal progetto Application. -->
+    <TargetFramework>net8.0</TargetFramework>
+
+    <!-- Abilita il controllo di nullabilità a compile-time. -->
+    <Nullable>enable</Nullable>
+
+    <!-- Abilita gli implicit using standard del framework. -->
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <!--
+    Riferimenti ai progetti interni della solution.
+    Collegano il layer Application alle astrazioni e ai modelli del dominio.
+  -->
+  <ItemGroup>
+    <!-- Accesso a entità, enum, value object e logica del dominio applicativo. -->
+    <ProjectReference Include="..\CoreService.Domain\CoreService.Domain.csproj" />
+  </ItemGroup>
+
+  <!--
+    Riferimenti framework.
+    Rendono disponibili API condivise del framework ASP.NET Core
+    eventualmente usate dal layer applicativo.
+  -->
+  <ItemGroup>
+    <!-- Accesso alle librerie condivise incluse nel framework ASP.NET Core. -->
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <!--
+    Dipendenze NuGet esterne del layer Application.
+    Supportano l’uso di astrazioni e componenti di Entity Framework Core.
+  -->
+  <ItemGroup>
+    <!-- Libreria base di Entity Framework Core usata nei servizi applicativi. -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.0" />
+  </ItemGroup>
+
+</Project>

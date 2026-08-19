@@ -1,0 +1,301 @@
+<!--
+  File: frontend/pages/delegate/notifications.html
+
+  Scopo
+  -----
+  Definire la pagina dell’area Delegate dedicata alla consultazione delle
+  notifiche e comunicazioni associate all’assistito selezionato, consentendo
+  al delegato di filtrare, ricercare, ordinare e aprire i messaggi ricevuti,
+  oltre a gestirne lo stato di lettura nel perimetro della delega attiva.
+
+  Ruolo nel sistema
+  -----------------
+  Questa pagina appartiene all’area Delegate del portale e rappresenta la
+  vista attraverso cui il delegato può consultare promemoria, avvisi e
+  comunicazioni relative alle prestazioni dell’assistito selezionato.
+  La pagina integra strumenti di selezione dell’assistito, filtri temporali
+  e testuali, indicatori sintetici sulle notifiche disponibili e azioni
+  operative per la lettura puntuale o l’aggiornamento massivo dello stato
+  di lettura.
+
+  Note
+  ----
+  Il file contiene il markup strutturale della pagina e i placeholder DOM
+  utilizzati dal relativo script JavaScript. La logica di autenticazione,
+  caricamento delle deleghe, selezione dell’assistito, recupero delle
+  notifiche, applicazione dei filtri, ordinamento, aggiornamento delle
+  statistiche, rendering dell’elenco, apertura dei dettagli e gestione
+  dello stato di lettura è demandata ai moduli caricati in
+  `../../js/common/` e in `../../js/delegate/notifications.js`.
+-->
+
+<!doctype html>
+<html lang="it">
+
+<head>
+  <!-- Metadati di base del documento HTML -->
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Titolo mostrato nella scheda del browser -->
+  <title>Notifiche assistito | Healthcare Portal</title>
+
+  <!-- Risorse statiche condivise della pagina -->
+  <link rel="icon" href="../../assets/favicon.ico" />
+  <link rel="stylesheet" href="../../css/styles.css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!--
+    Script condivisi e specifici della pagina.
+    Vengono caricati con `defer` per eseguire la logica applicativa
+    dopo il parsing completo del documento HTML.
+  -->
+  <script defer src="../../js/common/utils.js"></script>
+  <script defer src="../../js/common/session.js"></script>
+  <script defer src="../../js/common/auth.js"></script>
+  <script defer src="../../js/common/ui-components.js"></script>
+  <script defer src="../../js/delegate/notifications.js"></script>
+</head>
+
+<body class="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
+  <!-- Placeholder del componente navbar condiviso, sostituito dinamicamente lato client -->
+  <div data-component="navbar"></div>
+
+  <!--
+    Contenuto principale della pagina notifiche del delegato.
+    Comprende l’intestazione della vista, la selezione dell’assistito,
+    i controlli di filtro e ricerca, gli indicatori sintetici, l’elenco
+    delle notifiche e il contenitore per eventuali errori globali.
+  -->
+  <main class="mx-auto w-full max-w-7xl px-4 py-8 flex-1">
+    <!--
+      Sezione introduttiva della pagina.
+      Presenta il contesto delle comunicazioni dell’assistito selezionato
+      e include le azioni rapide principali della vista.
+    -->
+    <section class="rounded-2xl border bg-white p-6 sm:p-8 shadow-sm">
+      <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
+        <div class="flex-1">
+          <div class="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-sm text-blue-700">
+            <span class="h-2 w-2 rounded-full bg-blue-600"></span>
+            Comunicazioni assistito
+          </div>
+
+          <h1 class="mt-4 text-2xl sm:text-3xl font-semibold tracking-tight">Notifiche assistito</h1>
+
+          <p class="mt-2 text-slate-600 leading-relaxed">
+            Selezioni l’assistito e consulti promemoria e comunicazioni relative alle sue prestazioni. È possibile
+            filtrare, aprire i dettagli e contrassegnare come lette.
+          </p>
+        </div>
+
+        <!-- Azioni rapide principali: marcatura massiva come lette, dashboard e badge di caricamento -->
+        <div class="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
+          <button id="btnMarkAllRead" type="button"
+            class="h-10 inline-flex items-center justify-center rounded-xl bg-blue-600 px-4 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-100">
+            Segna tutte come lette
+          </button>
+
+          <a href="./dashboard.html"
+            class="h-10 inline-flex items-center justify-center rounded-xl border bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-100">
+            Dashboard
+          </a>
+
+          <div id="loadingBadge"
+            class="hidden inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-sm text-slate-700">
+            <span class="h-2 w-2 rounded-full bg-slate-500 animate-pulse"></span>
+            Caricamento…
+          </div>
+        </div>
+      </div>
+
+      <!--
+        Area di selezione dell’assistito.
+        Consente di scegliere il paziente delegato, aggiornare l’elenco
+        delle deleghe e visualizzare lo stato contestuale dei permessi.
+      -->
+      <div class="mt-6 grid gap-3 lg:grid-cols-12">
+        <div class="lg:col-span-6">
+          <div class="flex items-center justify-between gap-3">
+            <label class="text-sm font-medium text-slate-700" for="patientSelect">Assistito</label>
+
+            <!-- Badge di caricamento dedicato al refresh dell’elenco deleghe -->
+            <div id="delLoadingBadge"
+              class="hidden inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-sm text-slate-700">
+              <span class="h-2 w-2 rounded-full bg-slate-500 animate-pulse"></span>
+              Caricamento…
+            </div>
+          </div>
+
+          <!-- Selettore dell’assistito delegato e pulsante di aggiornamento elenco -->
+          <div class="mt-2 flex gap-2">
+            <select id="patientSelect"
+              class="h-11 w-full rounded-xl border bg-white px-4 text-sm focus:outline-none focus:ring-4 focus:ring-blue-100">
+              <option value="">Selezionare un assistito...</option>
+            </select>
+
+            <button id="btnReloadDelegations" type="button"
+              class="h-11 inline-flex items-center justify-center rounded-xl border bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-100">
+              Aggiorna
+            </button>
+          </div>
+
+          <!-- Testo contestuale che descrive lo stato della selezione o della delega corrente -->
+          <p id="delegationHint" class="mt-2 text-xs text-slate-500">
+            Selezioni un assistito per visualizzare l’elenco delle notifiche.
+          </p>
+
+          <!--
+            Box informativo mostrato quando la delega selezionata
+            non consente la consultazione delle notifiche.
+          -->
+          <div id="permissionBox" class="hidden mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4">
+            <div class="text-sm font-medium text-amber-900">Consultazione non disponibile</div>
+            <div id="permissionText" class="mt-1 text-sm text-amber-800 leading-relaxed">—</div>
+          </div>
+        </div>
+      </div>
+
+      <!--
+        Area dei filtri principali.
+        Consente di limitare le notifiche per testo, ordinamento
+        e intervallo temporale.
+      -->
+      <div class="mt-6 grid gap-3 lg:grid-cols-12">
+        <div class="lg:col-span-4">
+          <label class="text-sm font-medium text-slate-700" for="searchInput">Ricerca</label>
+          <input id="searchInput" type="search" autocomplete="off" placeholder="Oggetto o contenuto…"
+            class="mt-2 h-11 w-full rounded-xl border px-4 text-sm focus:outline-none focus:ring-4 focus:ring-blue-100" />
+        </div>
+
+        <div class="lg:col-span-2">
+          <label class="text-sm font-medium text-slate-700" for="sortSelect">Ordina</label>
+          <select id="sortSelect"
+            class="mt-2 h-11 w-full rounded-xl border bg-white px-4 text-sm focus:outline-none focus:ring-4 focus:ring-blue-100">
+            <option value="NEWEST">Più recenti</option>
+            <option value="OLDEST">Più vecchie</option>
+          </select>
+        </div>
+
+        <div class="lg:col-span-3">
+          <label class="text-sm font-medium text-slate-700" for="fromDate">Da</label>
+          <input id="fromDate" type="date"
+            class="mt-2 h-11 w-full rounded-xl border px-4 text-sm focus:outline-none focus:ring-4 focus:ring-blue-100" />
+        </div>
+
+        <div class="lg:col-span-3">
+          <label class="text-sm font-medium text-slate-700" for="toDate">A</label>
+          <input id="toDate" type="date"
+            class="mt-2 h-11 w-full rounded-xl border px-4 text-sm focus:outline-none focus:ring-4 focus:ring-blue-100" />
+        </div>
+      </div>
+
+      <!--
+        Barra delle azioni rapide sui filtri.
+        Include preset temporali, reset dei criteri e opzione
+        per mostrare solo le notifiche non lette.
+      -->
+      <div class="mt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div class="flex flex-wrap gap-2">
+          <button id="btnLast30" type="button"
+            class="h-10 inline-flex items-center rounded-xl border bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-100">
+            Ultimi 30 giorni
+          </button>
+          <button id="btnLast90" type="button"
+            class="h-10 inline-flex items-center rounded-xl border bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-100">
+            Ultimi 3 mesi
+          </button>
+          <button id="btnAll" type="button"
+            class="h-10 inline-flex items-center rounded-xl border bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-100">
+            Tutte
+          </button>
+          <button id="btnResetFilters" type="button"
+            class="h-10 inline-flex items-center rounded-xl border bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-100">
+            Ripristina
+          </button>
+        </div>
+
+        <!-- Toggle per limitare la vista alle sole notifiche non lette -->
+        <div class="flex items-center justify-end">
+          <label
+            class="h-11 inline-flex items-center gap-3 rounded-xl border bg-white px-4 text-sm text-slate-700 hover:bg-slate-50 cursor-pointer select-none focus-within:outline-none focus-within:ring-4 focus-within:ring-blue-100">
+            <input id="onlyUnread" type="checkbox" class="h-4 w-4 rounded border-slate-300" />
+            <span>Mostra solo non lette</span>
+          </label>
+        </div>
+      </div>
+
+      <!--
+        Riquadri sintetici con indicatori aggregati sulle notifiche disponibili.
+        Espongono totale notifiche, totale non lette e data del messaggio più recente.
+      -->
+      <div class="mt-5 grid grid-cols-3 gap-2 sm:w-[560px]">
+        <div class="rounded-xl border bg-slate-50 px-4 py-3">
+          <div class="text-xs text-slate-500">Totali</div>
+          <div id="statTotal" class="mt-1 text-lg font-semibold">—</div>
+        </div>
+        <div class="rounded-xl border bg-slate-50 px-4 py-3">
+          <div class="text-xs text-slate-500">Non lette</div>
+          <div id="statUnread" class="mt-1 text-lg font-semibold">—</div>
+        </div>
+        <div class="rounded-xl border bg-slate-50 px-4 py-3">
+          <div class="text-xs text-slate-500">Più recente</div>
+          <div id="statLatest" class="mt-1 text-lg font-semibold">—</div>
+        </div>
+      </div>
+    </section>
+
+    <!--
+      Sezione principale della pagina.
+      Contiene lo stato vuoto e l’area che ospita dinamicamente
+      l’elenco delle notifiche disponibili.
+    -->
+    <section class="mt-6 rounded-2xl border bg-white p-6 sm:p-8 shadow-sm">
+      <div class="flex items-start justify-between gap-4">
+        <div>
+          <h2 class="text-lg font-semibold">Elenco notifiche</h2>
+          <p class="mt-1 text-sm text-slate-600">
+            Selezioni una notifica per aprire i dettagli. Le notifiche non lette possono essere contrassegnate come
+            lette.
+          </p>
+        </div>
+      </div>
+
+      <!--
+        Stato vuoto mostrato quando nessuna notifica soddisfa i criteri correnti.
+        Offre il reset dei filtri per ripristinare la vista completa.
+      -->
+      <div id="emptyState" class="hidden mt-6 rounded-2xl border bg-slate-50 p-6">
+        <div class="text-sm font-medium text-slate-800">Nessuna notifica trovata</div>
+        <div class="mt-1 text-sm text-slate-600">
+          Provi a modificare filtri o intervallo di date.
+        </div>
+        <div class="mt-4 flex flex-wrap gap-2">
+          <button id="btnEmptyReset" type="button"
+            class="h-10 inline-flex items-center rounded-xl border bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-100">
+            Ripristina filtri
+          </button>
+        </div>
+      </div>
+
+      <!--
+        Contenitore dinamico dell’elenco notifiche.
+        Il contenuto viene sostituito lato client con le card dei messaggi
+        caricati o con i relativi placeholder di stato.
+      -->
+      <div id="listHost" class="mt-6 space-y-3">
+        <div class="py-8 text-center text-slate-600">Selezioni un assistito per iniziare.</div>
+      </div>
+    </section>
+
+    <!-- Contenitore per errori globali della pagina mostrati lato client -->
+    <div id="pageError" class="hidden mt-6 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700"
+      role="alert" aria-live="polite"></div>
+  </main>
+
+  <!-- Placeholder dei componenti condivisi renderizzati dinamicamente lato client -->
+  <div data-component="footer"></div>
+  <div data-component="modal"></div>
+</body>
+
+</html>

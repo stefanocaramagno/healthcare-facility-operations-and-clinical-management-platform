@@ -1,0 +1,266 @@
+<!--
+  File: frontend/pages/patient/delegations.html
+
+  Scopo
+  -----
+  Definire la pagina dell’area Patient dedicata alla consultazione delle
+  deleghe associate al paziente, consentendo la visualizzazione dello stato,
+  dell’ambito operativo, del delegato collegato e dei principali riferimenti
+  temporali delle deleghe registrate.
+
+  Ruolo nel sistema
+  -----------------
+  Questa pagina appartiene all’area Patient del portale e rappresenta la
+  vista attraverso cui il paziente può monitorare le deleghe attive,
+  pendenti, revocate o scadute associate al proprio profilo. La pagina
+  integra strumenti di filtro e ricerca, indicatori sintetici sul numero
+  di deleghe presenti e accesso ai dettagli della singola delega.
+
+  Note
+  ----
+  Il file contiene il markup strutturale della pagina e i placeholder DOM
+  utilizzati dal relativo script JavaScript. La logica di autenticazione,
+  caricamento del profilo utente e delle deleghe, applicazione dei filtri,
+  aggiornamento delle statistiche, rendering tabellare, gestione dello
+  stato vuoto e apertura del dettaglio delega è demandata ai moduli
+  caricati in `../../js/common/` e in `../../js/patient/delegations.js`.
+-->
+
+<!doctype html>
+<html lang="it">
+
+<head>
+  <!-- Metadati di base del documento HTML -->
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Titolo mostrato nella scheda del browser -->
+  <title>Deleghe | Healthcare Portal</title>
+
+  <!-- Risorse statiche condivise della pagina -->
+  <link rel="icon" href="../../assets/favicon.ico" />
+  <link rel="stylesheet" href="../../css/styles.css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!--
+    Script condivisi e specifici della pagina.
+    Vengono caricati con `defer` per eseguire la logica applicativa
+    dopo il parsing completo del documento HTML.
+  -->
+  <script defer src="../../js/common/utils.js"></script>
+  <script defer src="../../js/common/session.js"></script>
+  <script defer src="../../js/common/auth.js"></script>
+  <script defer src="../../js/common/ui-components.js"></script>
+  <script defer src="../../js/patient/delegations.js"></script>
+</head>
+
+<body class="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
+  <!-- Placeholder del componente navbar condiviso, sostituito dinamicamente lato client -->
+  <div data-component="navbar"></div>
+
+  <!--
+    Contenuto principale della pagina deleghe.
+    Comprende l’intestazione della vista, il riepilogo sintetico
+    dell’utente, gli indicatori aggregati, i controlli di filtro,
+    l’elenco tabellare delle deleghe e il contenitore per eventuali errori globali.
+  -->
+  <main class="mx-auto w-full max-w-7xl px-4 py-8 flex-1">
+    <!--
+      Sezione introduttiva della pagina.
+      Presenta il contesto della gestione delle deleghe e include i
+      collegamenti rapidi verso consensi e dashboard del paziente.
+    -->
+    <section class="rounded-2xl border bg-white p-6 sm:p-8 shadow-sm">
+      <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
+        <div class="flex-1">
+          <div class="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-sm text-blue-700">
+            <span class="h-2 w-2 rounded-full bg-blue-600"></span>
+            Area personale
+          </div>
+
+          <h1 class="mt-4 text-2xl sm:text-3xl font-semibold tracking-tight">Deleghe</h1>
+
+          <p class="mt-2 text-slate-600 leading-relaxed">
+            Le deleghe consentono a un delegato di operare per suo conto entro limiti specifici.
+            In questa sezione può consultare lo stato e i dettagli delle deleghe.
+          </p>
+        </div>
+
+        <!-- Azioni rapide verso consensi, dashboard e indicatore di caricamento globale -->
+        <div class="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
+          <a href="./consents.html"
+            class="h-10 inline-flex items-center justify-center rounded-xl border bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-100">
+            Consensi
+          </a>
+
+          <a href="./dashboard.html"
+            class="h-10 inline-flex items-center justify-center rounded-xl border bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-100">
+            Dashboard
+          </a>
+
+          <div id="loadingBadge"
+            class="hidden inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-sm text-slate-700">
+            <span class="h-2 w-2 rounded-full bg-slate-500 animate-pulse"></span>
+            Caricamento…
+          </div>
+        </div>
+      </div>
+
+      <!--
+        Riquadri sintetici con i principali dati identificativi dell’utente.
+        Servono a contestualizzare le deleghe mostrate nella pagina.
+      -->
+      <div class="mt-6 grid gap-3 sm:grid-cols-12">
+        <div class="sm:col-span-6 rounded-2xl border bg-slate-50 p-4">
+          <div class="text-xs font-medium text-slate-500">Email</div>
+          <div id="emailText" class="mt-1 text-sm font-semibold text-slate-900 truncate">—</div>
+        </div>
+        <div class="sm:col-span-6 rounded-2xl border bg-slate-50 p-4">
+          <div class="text-xs font-medium text-slate-500">Identificativo utente</div>
+          <div id="userIdText" class="mt-1 text-sm font-semibold text-slate-900 break-words">—</div>
+        </div>
+      </div>
+
+      <!--
+        Riquadri sintetici con indicatori aggregati sulle deleghe disponibili.
+        Espongono totale deleghe, numero di deleghe attive e numero di deleghe in attesa.
+      -->
+      <div class="mt-5 grid grid-cols-3 gap-2 sm:w-[560px]">
+        <div class="rounded-xl border bg-slate-50 px-4 py-3">
+          <div class="text-xs text-slate-500">Totali</div>
+          <div id="statTotal" class="mt-1 text-lg font-semibold">—</div>
+        </div>
+        <div class="rounded-xl border bg-slate-50 px-4 py-3">
+          <div class="text-xs text-slate-500">Attive</div>
+          <div id="statActive" class="mt-1 text-lg font-semibold">—</div>
+        </div>
+        <div class="rounded-xl border bg-slate-50 px-4 py-3">
+          <div class="text-xs text-slate-500">In attesa</div>
+          <div id="statPending" class="mt-1 text-lg font-semibold">—</div>
+        </div>
+      </div>
+
+      <!--
+        Area dei filtri principali.
+        Consente di limitare le deleghe per testo, stato e ambito operativo.
+      -->
+      <div class="mt-6 grid gap-3 lg:grid-cols-12">
+        <div class="lg:col-span-5">
+          <label class="text-sm font-medium text-slate-700" for="searchInput">Ricerca</label>
+          <input id="searchInput" type="search" autocomplete="off" placeholder="Cerca per identificativo delegato…"
+            class="mt-2 h-11 w-full rounded-xl border px-4 text-sm focus:outline-none focus:ring-4 focus:ring-blue-100" />
+        </div>
+
+        <div class="lg:col-span-3">
+          <label class="text-sm font-medium text-slate-700" for="statusSelect">Stato</label>
+          <select id="statusSelect"
+            class="mt-2 h-11 w-full rounded-xl border bg-white px-4 text-sm focus:outline-none focus:ring-4 focus:ring-blue-100">
+            <option value="ALL">Tutti</option>
+            <option value="Active">Attiva</option>
+            <option value="Pending">In attesa</option>
+            <option value="Revoked">Revocata</option>
+            <option value="Expired">Scaduta</option>
+          </select>
+        </div>
+
+        <div class="lg:col-span-4">
+          <label class="text-sm font-medium text-slate-700" for="scopeSelect">Ambito</label>
+          <select id="scopeSelect"
+            class="mt-2 h-11 w-full rounded-xl border bg-white px-4 text-sm focus:outline-none focus:ring-4 focus:ring-blue-100">
+            <option value="ALL">Tutti</option>
+            <option value="ReadOnly">Solo consultazione</option>
+            <option value="ManageAppointments">Gestione appuntamenti</option>
+            <option value="ManagePayments">Gestione pagamenti</option>
+          </select>
+        </div>
+      </div>
+
+      <!--
+        Barra delle azioni accessorie della vista.
+        Include il reset dei filtri e un riquadro informativo sulle modalità operative
+        per attivazione, modifica o revoca delle deleghe.
+      -->
+      <div class="mt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div class="flex flex-wrap gap-2">
+          <button id="btnResetFilters" type="button"
+            class="h-10 inline-flex items-center rounded-xl border bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-100">
+            Ripristina filtri
+          </button>
+        </div>
+
+        <div class="rounded-2xl border bg-slate-50 px-5 py-4 text-sm text-slate-700 leading-relaxed">
+          Per attivare, modificare o revocare una delega, contatti la struttura e comunichi l’identificativo del
+          delegato.
+        </div>
+      </div>
+    </section>
+
+    <!--
+      Sezione principale della pagina.
+      Contiene lo stato vuoto e la tabella delle deleghe associate
+      al paziente autenticato.
+    -->
+    <section class="mt-6 rounded-2xl border bg-white p-6 sm:p-8 shadow-sm">
+      <div class="flex items-start justify-between gap-4">
+        <div>
+          <h2 class="text-lg font-semibold">Elenco deleghe</h2>
+          <p class="mt-1 text-sm text-slate-600">
+            Selezioni “Apri” per visualizzare i dettagli della delega.
+          </p>
+        </div>
+      </div>
+
+      <!--
+        Stato vuoto mostrato quando nessuna delega soddisfa i criteri correnti.
+        Offre il reset dei filtri per ripristinare la vista completa.
+      -->
+      <div id="emptyState" class="hidden mt-6 rounded-2xl border bg-slate-50 p-6">
+        <div class="text-sm font-medium text-slate-800">Nessuna delega trovata</div>
+        <div class="mt-1 text-sm text-slate-600">
+          Provi a modificare i filtri.
+        </div>
+        <div class="mt-4 flex flex-wrap gap-2">
+          <button id="btnEmptyReset" type="button"
+            class="h-10 inline-flex items-center rounded-xl border bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-100">
+            Ripristina filtri
+          </button>
+        </div>
+      </div>
+
+      <!--
+        Tabella delle deleghe.
+        Il corpo viene popolato dinamicamente lato client con le deleghe
+        disponibili e con le relative azioni operative.
+      -->
+      <div class="mt-6 overflow-x-auto">
+        <table class="min-w-full text-sm">
+          <thead>
+            <tr class="text-left text-xs text-slate-500 border-b">
+              <th class="py-3 pr-4 font-medium">Stato</th>
+              <th class="py-3 pr-4 font-medium">Ambito</th>
+              <th class="py-3 pr-4 font-medium">Delegato</th>
+              <th class="py-3 pr-4 font-medium">Validità</th>
+              <th class="py-3 pr-4 font-medium">Creazione</th>
+              <th class="py-3 text-right font-medium">Azioni</th>
+            </tr>
+          </thead>
+          <tbody id="tbody" class="divide-y">
+            <tr>
+              <td colspan="6" class="py-6 text-center text-slate-600">Caricamento…</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Contenitore per errori globali della pagina mostrati lato client -->
+    <div id="pageError" class="hidden mt-6 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700"
+      role="alert" aria-live="polite"></div>
+  </main>
+
+  <!-- Placeholder dei componenti condivisi renderizzati dinamicamente lato client -->
+  <div data-component="footer"></div>
+  <div data-component="modal"></div>
+</body>
+
+</html>

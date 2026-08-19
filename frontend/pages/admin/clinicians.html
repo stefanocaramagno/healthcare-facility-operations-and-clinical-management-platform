@@ -1,0 +1,229 @@
+<!--
+  File: frontend/pages/admin/clinicians.html
+
+  Scopo
+  -----
+  Definire la pagina amministrativa dedicata alla consultazione e gestione
+  dell’anagrafica dei clinici, includendo strumenti di ricerca, filtraggio,
+  riepilogo statistico e accesso rapido alle azioni operative principali.
+
+  Ruolo nel sistema
+  -----------------
+  Questa pagina appartiene all’area Admin del portale e rappresenta il punto
+  di accesso alla lista dei clinici. Consente all’operatore amministrativo di
+  consultare l’elenco, applicare filtri, visualizzare indicatori sintetici
+  e aprire i dettagli del singolo clinico.
+
+  Note
+  ----
+  Il file contiene il markup strutturale della pagina e i placeholder DOM
+  utilizzati dagli script JavaScript associati. La logica di autenticazione,
+  bootstrap dei componenti condivisi e caricamento dei dati è delegata ai moduli
+  caricati in `../../js/common/` e `../../js/admin/clinicians.js`.
+-->
+
+<!doctype html>
+<html lang="it">
+
+<head>
+  <!-- Metadati di base del documento HTML -->
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Titolo mostrato nella scheda del browser -->
+  <title>Clinici | Healthcare Portal</title>
+
+  <!-- Risorse statiche condivise della pagina -->
+  <link rel="icon" href="../../assets/favicon.ico" />
+  <link rel="stylesheet" href="../../css/styles.css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!--
+    Script condivisi e specifici della pagina.
+    Vengono caricati con `defer` per eseguire la logica applicativa
+    dopo il parsing completo del documento HTML.
+  -->
+  <script defer src="../../js/common/utils.js"></script>
+  <script defer src="../../js/common/session.js"></script>
+  <script defer src="../../js/common/auth.js"></script>
+  <script defer src="../../js/common/ui-components.js"></script>
+  <script defer src="../../js/admin/clinicians.js"></script>
+</head>
+
+<body class="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
+  <!-- Placeholder del componente navbar condiviso, sostituito dinamicamente lato client -->
+  <div data-component="navbar"></div>
+
+  <!--
+    Contenuto principale della pagina clinici.
+    Comprende intestazione funzionale, barra filtri, statistiche sintetiche,
+    tabella risultati ed eventuale messaggio di errore globale.
+  -->
+  <main class="mx-auto w-full max-w-7xl px-4 py-8 flex-1">
+    <!--
+      Sezione introduttiva della pagina.
+      Presenta il contesto operativo, le azioni principali e i controlli di filtro.
+    -->
+    <section class="rounded-2xl border bg-white p-6 sm:p-8 shadow-sm">
+      <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
+        <div class="flex-1">
+          <div class="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-sm text-blue-700">
+            <span class="h-2 w-2 rounded-full bg-blue-600"></span>
+            Anagrafiche
+          </div>
+
+          <h1 class="mt-4 text-2xl sm:text-3xl font-semibold tracking-tight">Gestione clinici</h1>
+
+          <p class="mt-2 text-slate-600 leading-relaxed">
+            Consultazione e gestione dell’elenco clinici. È possibile filtrare i risultati e aprire la scheda del
+            clinico per visualizzare o aggiornare le informazioni professionali.
+          </p>
+        </div>
+
+        <!-- Azioni rapide di alto livello per l’area clinici -->
+        <div class="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
+          <a href="./clinician-detail.html?mode=create"
+            class="h-10 inline-flex items-center justify-center rounded-xl bg-blue-600 px-4 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-100">
+            Nuovo clinico
+          </a>
+
+          <button id="btnExport" type="button"
+            class="h-10 inline-flex items-center justify-center rounded-xl border bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-100">
+            Esporta elenco
+          </button>
+
+          <a href="./dashboard.html"
+            class="h-10 inline-flex items-center justify-center rounded-xl border bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-100">
+            Dashboard
+          </a>
+        </div>
+      </div>
+
+      <!-- Area filtri: ricerca testuale, reset, refresh e filtro per stato -->
+      <div class="mt-6 grid gap-3 lg:grid-cols-12">
+        <div class="lg:col-span-8">
+          <label class="text-sm font-medium text-slate-700" for="searchInput">Ricerca</label>
+          <div class="mt-2 flex items-center gap-2">
+            <input id="searchInput" type="search" autocomplete="off"
+              placeholder="Cerca per nome, cognome, telefono, e-mail, specialità, numero di licenza o sede…"
+              class="h-11 w-full rounded-xl border px-4 text-sm focus:outline-none focus:ring-4 focus:ring-blue-100" />
+
+            <button id="btnClearSearch" type="button"
+              class="h-11 inline-flex items-center justify-center rounded-xl border bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-100">
+              Pulisci
+            </button>
+
+            <button id="btnRefresh" type="button"
+              class="h-11 inline-flex items-center justify-center rounded-xl border bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-100">
+              Aggiorna
+            </button>
+          </div>
+        </div>
+
+        <div class="lg:col-span-4">
+          <label class="text-sm font-medium text-slate-700" for="statusSelect">Stato</label>
+          <select id="statusSelect"
+            class="mt-2 h-11 w-full rounded-xl border bg-white px-3 text-sm focus:outline-none focus:ring-4 focus:ring-blue-100">
+            <option value="all">Tutti</option>
+            <option value="active">Attivi</option>
+            <option value="inactive">Non attivi</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Riepilogo sintetico dei risultati mostrati e della distribuzione per stato -->
+      <div class="mt-5 grid grid-cols-3 gap-2 sm:w-[560px]">
+        <div class="rounded-xl border bg-slate-50 px-4 py-3">
+          <div class="text-xs text-slate-500">Visualizzati</div>
+          <div id="statShown" class="mt-1 text-lg font-semibold">—</div>
+        </div>
+        <div class="rounded-xl border bg-slate-50 px-4 py-3">
+          <div class="text-xs text-slate-500">Attivi</div>
+          <div id="statActive" class="mt-1 text-lg font-semibold">—</div>
+        </div>
+        <div class="rounded-xl border bg-slate-50 px-4 py-3">
+          <div class="text-xs text-slate-500">Non attivi</div>
+          <div id="statInactive" class="mt-1 text-lg font-semibold">—</div>
+        </div>
+      </div>
+    </section>
+
+    <!--
+      Sezione principale dei risultati.
+      Contiene stato di caricamento, empty state e tabella dell’elenco clinici.
+    -->
+    <section class="mt-6 rounded-2xl border bg-white p-6 sm:p-8 shadow-sm">
+      <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+        <div>
+          <h2 class="text-lg font-semibold">Elenco clinici</h2>
+          <p class="mt-1 text-sm text-slate-600">
+            Selezioni un clinico per visualizzare i dettagli oppure aprire la scheda completa.
+          </p>
+        </div>
+
+        <!-- Indicatore visuale mostrato durante il caricamento dei dati -->
+        <div id="loadingBadge"
+          class="hidden inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-sm text-slate-700">
+          <span class="h-2 w-2 rounded-full bg-slate-500 animate-pulse"></span>
+          Caricamento…
+        </div>
+      </div>
+
+      <!--
+        Stato vuoto mostrato quando non esistono risultati compatibili con i filtri
+        oppure quando la lista è temporaneamente priva di elementi.
+      -->
+      <div id="emptyState" class="hidden mt-6 rounded-2xl border bg-slate-50 p-6">
+        <div class="text-sm font-medium text-slate-800">Nessun risultato disponibile</div>
+        <div class="mt-1 text-sm text-slate-600">
+          Modifichi i filtri di ricerca oppure riprovi aggiornando l’elenco.
+        </div>
+        <div class="mt-4 flex flex-wrap gap-2">
+          <button id="btnRefreshEmpty" type="button"
+            class="h-10 inline-flex items-center rounded-xl bg-blue-600 px-4 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-100">
+            Aggiorna elenco
+          </button>
+
+          <a href="./clinician-detail.html?mode=create"
+            class="h-10 inline-flex items-center rounded-xl border bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-100">
+            Registra clinico
+          </a>
+        </div>
+      </div>
+
+      <!-- Tabella principale con l’elenco clinici -->
+      <div class="mt-6 overflow-x-auto">
+        <table class="min-w-full text-sm">
+          <thead>
+            <tr class="text-left text-xs text-slate-500 border-b">
+              <th class="py-3 pr-4 font-medium">Clinico</th>
+              <th class="py-3 pr-4 font-medium">Contatti</th>
+              <th class="py-3 pr-4 font-medium">Profilo</th>
+              <th class="py-3 pr-4 font-medium">Sede</th>
+              <th class="py-3 pr-4 font-medium">Stato</th>
+              <th class="py-3 pr-4 font-medium">Aggiornato</th>
+              <th class="py-3 text-right font-medium">Azioni</th>
+            </tr>
+          </thead>
+
+          <!-- Corpo tabella popolato dinamicamente dallo script della pagina -->
+          <tbody id="cliniciansTbody" class="divide-y">
+            <tr>
+              <td colspan="7" class="py-6 text-center text-slate-600">Caricamento…</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Contenitore dedicato a eventuali errori globali della pagina -->
+    <div id="pageError" class="hidden mt-6 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700"
+      role="alert" aria-live="polite"></div>
+  </main>
+
+  <!-- Placeholder dei componenti condivisi sostituiti dinamicamente lato client -->
+  <div data-component="footer"></div>
+  <div data-component="modal"></div>
+</body>
+
+</html>

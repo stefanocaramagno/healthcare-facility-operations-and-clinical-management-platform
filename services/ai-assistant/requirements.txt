@@ -1,0 +1,47 @@
+# File: services/ai-assistant/requirements.txt
+#
+# Scopo
+# -----
+# Dichiarare le dipendenze Python necessarie al funzionamento
+# del servizio AI Assistant basato su Django e Transformers.
+#
+# Ruolo nel sistema
+# -----------------
+# Questo file definisce il perimetro applicativo del modulo AI,
+# includendo framework web, librerie per inferenza, autenticazione,
+# chiamate HTTP ed estrazione testo da allegati.
+#
+# Note
+# ----
+# - Alcune dipendenze sono versionate con intervalli compatibili
+#   per bilanciare stabilità e aggiornabilità.
+# - PyTorch non è dichiarato qui perché viene installato separatamente
+#   nel Dockerfile in variante CPU oppure GPU.
+
+# Framework web principale del servizio AI.
+Django>=5.0,<6.0
+
+# Estensione REST usata per esporre endpoint API Django.
+djangorestframework>=3.15,<4.0
+
+# Application server WSGI utilizzato per eseguire Django in container.
+gunicorn>=22.0,<23.0
+
+# Libreria HTTP usata per chiamate verso servizi esterni o interni,
+# ad esempio introspection o richieste applicative di supporto.
+requests>=2.31,<3.0
+
+# Libreria principale per tokenizer, pipeline e modelli Hugging Face.
+transformers>=4.40.0
+
+# Dipendenza richiesta da alcuni modelli/tokenizer basati su SentencePiece.
+sentencepiece
+
+# Libreria per gestione, parsing e validazione dei token JWT.
+PyJWT>=2.8.0
+
+# Libreria per estrazione del testo da documenti PDF allegati.
+PyPDF2>=3.0.0
+
+# Libreria per lettura ed estrazione contenuti da file .docx.
+python-docx>=1.0.0

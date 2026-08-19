@@ -1,0 +1,294 @@
+<!--
+  File: frontend/pages/delegate/appointments.html
+
+  Scopo
+  -----
+  Definire la pagina dell’area Delegate dedicata alla consultazione degli
+  appuntamenti dell’assistito selezionato, consentendo il filtro per
+  intervallo temporale, stato e ricerca testuale, oltre all’accesso ai
+  dettagli e alle eventuali azioni consentite dalla delega.
+
+  Ruolo nel sistema
+  -----------------
+  Questa pagina appartiene all’area Delegate del portale e rappresenta la
+  vista attraverso cui il delegato può consultare l’agenda dell’assistito
+  per cui dispone di una delega valida. La pagina permette di selezionare
+  il paziente delegante, filtrare gli appuntamenti secondo diversi criteri,
+  visualizzare indicatori sintetici e accedere alle azioni disponibili in
+  base ai permessi associati alla delega corrente.
+
+  Note
+  ----
+  Il file contiene il markup strutturale della pagina e i placeholder DOM
+  utilizzati dal relativo script JavaScript. La logica di autenticazione,
+  caricamento delle deleghe, selezione dell’assistito, recupero degli
+  appuntamenti, applicazione dei filtri, aggiornamento delle statistiche,
+  rendering tabellare, gestione dello stato vuoto, apertura dei dettagli e
+  trattamento degli errori è demandata ai moduli caricati in
+  `../../js/common/` e in `../../js/delegate/appointments.js`.
+-->
+
+<!doctype html>
+<html lang="it">
+
+<head>
+  <!-- Metadati di base del documento HTML -->
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Titolo mostrato nella scheda del browser -->
+  <title>Appuntamenti | Healthcare Portal</title>
+
+  <!-- Risorse statiche condivise della pagina -->
+  <link rel="icon" href="../../assets/favicon.ico" />
+  <link rel="stylesheet" href="../../css/styles.css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!--
+    Script condivisi e specifici della pagina.
+    Vengono caricati con `defer` per eseguire la logica applicativa
+    dopo il parsing completo del documento HTML.
+  -->
+  <script defer src="../../js/common/utils.js"></script>
+  <script defer src="../../js/common/session.js"></script>
+  <script defer src="../../js/common/auth.js"></script>
+  <script defer src="../../js/common/ui-components.js"></script>
+  <script defer src="../../js/delegate/appointments.js"></script>
+</head>
+
+<body class="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
+  <!-- Placeholder del componente navbar condiviso, sostituito dinamicamente lato client -->
+  <div data-component="navbar"></div>
+
+  <!--
+    Contenuto principale della pagina appuntamenti assistito.
+    Comprende l’intestazione della vista, la selezione dell’assistito,
+    i filtri sugli appuntamenti, i riquadri statistici, la tabella dei
+    risultati e il contenitore per eventuali errori globali.
+  -->
+  <main class="mx-auto w-full max-w-7xl px-4 py-8 flex-1">
+    <!--
+      Sezione introduttiva della pagina.
+      Presenta il contesto della vista agenda assistito e include i
+      collegamenti rapidi verso la nuova prenotazione e la dashboard.
+    -->
+    <section class="rounded-2xl border bg-white p-6 sm:p-8 shadow-sm">
+      <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
+        <div class="flex-1">
+          <div class="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-sm text-blue-700">
+            <span class="h-2 w-2 rounded-full bg-blue-600"></span>
+            Agenda assistito
+          </div>
+
+          <h1 class="mt-4 text-2xl sm:text-3xl font-semibold tracking-tight">Appuntamenti assistito</h1>
+
+          <p class="mt-2 text-slate-600 leading-relaxed">
+            Selezioni l’assistito e consulti i dettagli degli appuntamenti. Le azioni disponibili dipendono dalla
+            delega.
+          </p>
+        </div>
+
+        <!-- Azioni rapide verso nuova prenotazione e dashboard del delegato -->
+        <div class="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
+          <a id="newBookingLink" href="./booking.html"
+            class="hidden h-10 inline-flex items-center justify-center rounded-xl bg-blue-600 px-4 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-100">
+            Nuova prenotazione
+          </a>
+
+          <a href="./dashboard.html"
+            class="h-10 inline-flex items-center justify-center rounded-xl border bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-100">
+            Dashboard
+          </a>
+        </div>
+      </div>
+
+      <!--
+        Sezione di selezione dell’assistito.
+        Consente al delegato di scegliere il paziente delegante per cui
+        consultare gli appuntamenti e di ricaricare l’elenco delle deleghe.
+      -->
+      <div class="mt-6 grid gap-3 lg:grid-cols-12">
+        <div class="lg:col-span-6">
+          <label class="text-sm font-medium text-slate-700" for="patientSelect">Assistito</label>
+          <div class="mt-2 flex gap-2">
+            <select id="patientSelect"
+              class="h-11 w-full rounded-xl border bg-white px-4 text-sm focus:outline-none focus:ring-4 focus:ring-blue-100">
+              <option value="">Caricamento…</option>
+            </select>
+            <button id="btnReloadDelegations" type="button"
+              class="h-11 inline-flex items-center justify-center rounded-xl border bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-100">
+              Aggiorna
+            </button>
+          </div>
+
+          <p id="delegationHint" class="mt-2 text-xs text-slate-500">
+            Selezioni un assistito per visualizzare gli appuntamenti.
+          </p>
+        </div>
+      </div>
+
+      <!--
+        Area dei filtri principali sugli appuntamenti.
+        Consente di limitare il dataset per intervallo di date, stato e
+        ricerca testuale su prestazione o note.
+      -->
+      <div class="mt-6 grid gap-3 lg:grid-cols-12">
+        <div class="lg:col-span-3">
+          <label class="text-sm font-medium text-slate-700" for="fromDate">Da</label>
+          <input id="fromDate" type="date"
+            class="mt-2 h-11 w-full rounded-xl border px-4 text-sm focus:outline-none focus:ring-4 focus:ring-blue-100" />
+        </div>
+
+        <div class="lg:col-span-3">
+          <label class="text-sm font-medium text-slate-700" for="toDate">A</label>
+          <input id="toDate" type="date"
+            class="mt-2 h-11 w-full rounded-xl border px-4 text-sm focus:outline-none focus:ring-4 focus:ring-blue-100" />
+        </div>
+
+        <div class="lg:col-span-3">
+          <label class="text-sm font-medium text-slate-700" for="statusSelect">Stato</label>
+          <select id="statusSelect"
+            class="mt-2 h-11 w-full rounded-xl border bg-white px-4 text-sm focus:outline-none focus:ring-4 focus:ring-blue-100">
+            <option value="ALL">Tutti</option>
+            <option value="BOOKED">Prenotati</option>
+            <option value="CHECKED_IN">Accettati</option>
+            <option value="COMPLETED">Completati</option>
+            <option value="CANCELED">Annullati</option>
+            <option value="NO_SHOW">Assenti</option>
+          </select>
+        </div>
+
+        <div class="lg:col-span-3">
+          <label class="text-sm font-medium text-slate-700" for="searchInput">Ricerca</label>
+          <input id="searchInput" type="search" autocomplete="off" placeholder="Prestazione o note…"
+            class="mt-2 h-11 w-full rounded-xl border px-4 text-sm focus:outline-none focus:ring-4 focus:ring-blue-100" />
+        </div>
+      </div>
+
+      <!--
+        Barra delle azioni rapide di filtro.
+        Include preset temporali, refresh dei dati e indicatore di caricamento globale.
+      -->
+      <div class="mt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div class="flex flex-wrap gap-2">
+          <button id="btnNext30" type="button"
+            class="h-10 inline-flex items-center rounded-xl border bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-100">
+            Prossimi 30 giorni
+          </button>
+          <button id="btnLast30" type="button"
+            class="h-10 inline-flex items-center rounded-xl border bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-100">
+            Ultimi 30 giorni
+          </button>
+          <button id="btnYear" type="button"
+            class="h-10 inline-flex items-center rounded-xl border bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-100">
+            Ultimi 12 mesi
+          </button>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button id="btnRefresh" type="button"
+            class="h-10 inline-flex items-center justify-center rounded-xl border bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-100">
+            Aggiorna
+          </button>
+
+          <div id="loadingBadge"
+            class="hidden inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-sm text-slate-700">
+            <span class="h-2 w-2 rounded-full bg-slate-500 animate-pulse"></span>
+            Caricamento…
+          </div>
+        </div>
+      </div>
+
+      <!--
+        Riquadri statistici sintetici della vista.
+        Mostrano totale appuntamenti, numero di appuntamenti futuri e passati
+        relativi al dataset correntemente caricato e filtrato.
+      -->
+      <div class="mt-5 grid grid-cols-3 gap-2 sm:w-[560px]">
+        <div class="rounded-xl border bg-slate-50 px-4 py-3">
+          <div class="text-xs text-slate-500">Totali</div>
+          <div id="statTotal" class="mt-1 text-lg font-semibold">—</div>
+        </div>
+        <div class="rounded-xl border bg-slate-50 px-4 py-3">
+          <div class="text-xs text-slate-500">Futuri</div>
+          <div id="statUpcoming" class="mt-1 text-lg font-semibold">—</div>
+        </div>
+        <div class="rounded-xl border bg-slate-50 px-4 py-3">
+          <div class="text-xs text-slate-500">Passati</div>
+          <div id="statPast" class="mt-1 text-lg font-semibold">—</div>
+        </div>
+      </div>
+    </section>
+
+    <!--
+      Sezione principale della pagina.
+      Contiene lo stato vuoto e la tabella degli appuntamenti dell’assistito selezionato.
+    -->
+    <section class="mt-6 rounded-2xl border bg-white p-6 sm:p-8 shadow-sm">
+      <div class="flex items-start justify-between gap-4">
+        <div>
+          <h2 class="text-lg font-semibold">Elenco appuntamenti</h2>
+          <p class="mt-1 text-sm text-slate-600">
+            Selezioni un appuntamento per visualizzare i dettagli o gestire eventuali azioni consentite.
+          </p>
+        </div>
+      </div>
+
+      <!--
+        Stato vuoto mostrato quando nessun appuntamento soddisfa i criteri correnti.
+        Offre il ripristino dei filtri e, se consentito, l’accesso rapido alla prenotazione.
+      -->
+      <div id="emptyState" class="hidden mt-6 rounded-2xl border bg-slate-50 p-6">
+        <div class="text-sm font-medium text-slate-800">Nessun appuntamento trovato</div>
+        <div class="mt-1 text-sm text-slate-600">
+          Provi a modificare l’intervallo di date o i criteri di filtro.
+        </div>
+        <div class="mt-4 flex flex-wrap gap-2">
+          <button id="btnResetFilters" type="button"
+            class="h-10 inline-flex items-center rounded-xl border bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-100">
+            Ripristina filtri
+          </button>
+          <a id="emptyBookingLink" href="./booking.html"
+            class="hidden h-10 inline-flex items-center rounded-xl bg-blue-600 px-4 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-100">
+            Prenota
+          </a>
+        </div>
+      </div>
+
+      <!--
+        Tabella degli appuntamenti.
+        Il corpo viene popolato dinamicamente lato client con gli appuntamenti
+        disponibili e con le eventuali azioni abilitate dalla delega.
+      -->
+      <div class="mt-6 overflow-x-auto">
+        <table class="min-w-full text-sm">
+          <thead>
+            <tr class="text-left text-xs text-slate-500 border-b">
+              <th class="py-3 pr-4 font-medium">Data/ora</th>
+              <th class="py-3 pr-4 font-medium">Prestazione</th>
+              <th class="py-3 pr-4 font-medium">Stato</th>
+              <th class="py-3 pr-4 font-medium">Costo</th>
+              <th class="py-3 pr-4 font-medium">Note</th>
+              <th class="py-3 text-right font-medium">Azioni</th>
+            </tr>
+          </thead>
+          <tbody id="appointmentsTbody" class="divide-y">
+            <tr>
+              <td colspan="6" class="py-6 text-center text-slate-600">Selezioni un assistito per iniziare.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Contenitore per errori globali della pagina mostrati lato client -->
+    <div id="pageError" class="hidden mt-6 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700"
+      role="alert" aria-live="polite"></div>
+  </main>
+
+  <!-- Placeholder dei componenti condivisi renderizzati dinamicamente lato client -->
+  <div data-component="footer"></div>
+  <div data-component="modal"></div>
+</body>
+
+</html>

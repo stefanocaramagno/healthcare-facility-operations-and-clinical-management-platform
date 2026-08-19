@@ -1,0 +1,215 @@
+<!--
+  File: frontend/pages/clinician/dashboard.html
+
+  Scopo
+  -----
+  Definire la dashboard principale dell’area Clinician, offrendo una vista
+  sintetica delle attività cliniche più rilevanti, delle metriche operative
+  principali e dei collegamenti rapidi ai flussi di lavoro più frequenti.
+
+  Ruolo nel sistema
+  -----------------
+  Questa pagina appartiene all’area Clinician del portale e rappresenta il
+  punto di ingresso operativo per il professionista sanitario autenticato.
+  Consente di visualizzare un riepilogo dell’agenda, dei pazienti programmati,
+  degli incontri clinici recenti e di accedere rapidamente alle sezioni
+  dedicate all’agenda, all’assistente AI e al profilo personale.
+
+  Note
+  ----
+  Il file contiene il markup strutturale della dashboard e i placeholder DOM
+  utilizzati dal relativo script JavaScript. La logica di autenticazione,
+  caricamento dei KPI, popolamento della lista degli appuntamenti imminenti
+  e gestione degli eventuali errori è demandata ai moduli caricati in
+  `../../js/common/` e in `../../js/clinician/dashboard.js`.
+-->
+
+<!doctype html>
+<html lang="it">
+
+<head>
+  <!-- Metadati di base del documento HTML -->
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Titolo mostrato nella scheda del browser -->
+  <title>Dashboard Clinico | Healthcare Portal</title>
+
+  <!-- Risorse statiche condivise della pagina -->
+  <link rel="icon" href="../../assets/favicon.ico" />
+  <link rel="stylesheet" href="../../css/styles.css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!--
+    Script condivisi e specifici della pagina.
+    Vengono caricati con `defer` per eseguire la logica applicativa
+    dopo il parsing completo del documento HTML.
+  -->
+  <script defer src="../../js/common/utils.js"></script>
+  <script defer src="../../js/common/session.js"></script>
+  <script defer src="../../js/common/auth.js"></script>
+  <script defer src="../../js/common/ui-components.js"></script>
+  <script defer src="../../js/clinician/dashboard.js"></script>
+</head>
+
+<body class="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
+  <!-- Placeholder del componente navbar condiviso, sostituito dinamicamente lato client -->
+  <div data-component="navbar"></div>
+
+  <!--
+    Contenuto principale della dashboard del clinico.
+    Comprende l’intestazione della vista, i KPI sintetici, la lista dei prossimi
+    appuntamenti, le azioni rapide e l’eventuale messaggio di errore globale.
+  -->
+  <main class="mx-auto max-w-7xl px-4 py-8 flex-1">
+    <!--
+      Sezione introduttiva della dashboard.
+      Presenta il contesto operativo del clinico e mette in evidenza i principali
+      punti di accesso alle sezioni più rilevanti del workflow quotidiano.
+    -->
+    <section class="rounded-2xl border bg-white p-6 sm:p-8 shadow-sm">
+      <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+        <div>
+          <div class="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-sm text-blue-700">
+            <span class="h-2 w-2 rounded-full bg-blue-600"></span>
+            Operatività clinica
+          </div>
+          <h1 class="mt-4 text-2xl sm:text-3xl font-semibold tracking-tight">Agenda e percorso clinico</h1>
+          <p class="mt-2 text-slate-600 leading-relaxed">
+            Consulta gli appuntamenti, gestisci gli incontri clinici e utilizza l’assistente AI consultivo.
+            Qui trovi un riepilogo rapido delle attività più rilevanti.
+          </p>
+        </div>
+
+        <!-- Collegamenti rapidi alle due aree cliniche centrali: agenda e supporto AI -->
+        <div class="grid grid-cols-2 gap-3 w-full lg:w-auto">
+          <a href="./agenda.html" class="rounded-2xl border bg-white p-4 hover:bg-slate-50" aria-label="Vai all'agenda">
+            <div class="text-xs text-slate-500">Oggi / prossimi giorni</div>
+            <div class="mt-1 font-semibold">Agenda</div>
+            <div class="mt-2 text-xs text-slate-600">appuntamenti e stati</div>
+          </a>
+          <a href="./ai-assistant.html" class="rounded-2xl border bg-white p-4 hover:bg-slate-50"
+            aria-label="Apri assistente AI">
+            <div class="text-xs text-slate-500">Consultivo</div>
+            <div class="mt-1 font-semibold">Assistente AI</div>
+            <div class="mt-2 text-xs text-slate-600">linee guida e supporto</div>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!--
+      Riquadri KPI della dashboard.
+      I valori vengono valorizzati dinamicamente dal modulo JavaScript di pagina
+      sulla base dei dati operativi del clinico.
+    -->
+    <section class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div class="rounded-2xl border bg-white p-5 shadow-sm">
+        <div class="text-sm text-slate-600">Appuntamenti (7 giorni)</div>
+        <div class="mt-2 flex items-end justify-between">
+          <div id="kpiAgenda" class="text-3xl font-semibold">—</div>
+          <div class="text-xs text-slate-500">visite</div>
+        </div>
+        <div class="mt-3 text-xs text-slate-500">panoramica prossima settimana</div>
+      </div>
+
+      <div class="rounded-2xl border bg-white p-5 shadow-sm">
+        <div class="text-sm text-slate-600">Appuntamenti oggi</div>
+        <div class="mt-2 flex items-end justify-between">
+          <div id="kpiToday" class="text-3xl font-semibold">—</div>
+          <div class="text-xs text-slate-500">in agenda</div>
+        </div>
+        <div class="mt-3 text-xs text-slate-500">focus sulla giornata corrente</div>
+      </div>
+
+      <div class="rounded-2xl border bg-white p-5 shadow-sm">
+        <div class="text-sm text-slate-600">Pazienti (7 giorni)</div>
+        <div class="mt-2 flex items-end justify-between">
+          <div id="kpiPatients" class="text-3xl font-semibold">—</div>
+          <div class="text-xs text-slate-500">distinti</div>
+        </div>
+        <div class="mt-3 text-xs text-slate-500">pazienti programmati</div>
+      </div>
+
+      <div class="rounded-2xl border bg-white p-5 shadow-sm">
+        <div class="text-sm text-slate-600">Incontri (30 giorni)</div>
+        <div class="mt-2 flex items-end justify-between">
+          <div id="kpiEncounters" class="text-3xl font-semibold">—</div>
+          <div class="text-xs text-slate-500">episodi</div>
+        </div>
+        <div class="mt-3 text-xs text-slate-500">attività cliniche recenti</div>
+      </div>
+    </section>
+
+    <!--
+      Layout centrale della dashboard.
+      La colonna principale mostra l’estratto dell’agenda imminente,
+      mentre la colonna laterale raccoglie le azioni rapide.
+    -->
+    <section class="mt-6 grid lg:grid-cols-3 gap-4">
+      <!--
+        Sezione con l’estratto dei prossimi appuntamenti.
+        Il contenuto della lista viene popolato dinamicamente dal modulo JavaScript.
+      -->
+      <div class="lg:col-span-2 rounded-2xl border bg-white p-6 shadow-sm">
+        <div class="flex items-start justify-between gap-4">
+          <div>
+            <h2 class="text-lg font-semibold">Prossimi appuntamenti</h2>
+            <p class="mt-1 text-sm text-slate-600">Estratto dell’agenda dei prossimi 7 giorni.</p>
+          </div>
+          <a class="text-sm text-blue-700 hover:text-blue-900" href="./agenda.html">Apri agenda</a>
+        </div>
+
+        <!--
+          Tabella semplificata dell’agenda imminente.
+          `agendaList` funge da contenitore per le righe generate lato client.
+        -->
+        <div class="mt-5 overflow-hidden rounded-xl border">
+          <div class="grid grid-cols-12 bg-slate-50 px-4 py-3 text-xs font-medium text-slate-600">
+            <div class="col-span-4">Data/ora</div>
+            <div class="col-span-4">Paziente</div>
+            <div class="col-span-2">Prestazione</div>
+            <div class="col-span-2 text-right">Stato</div>
+          </div>
+          <div id="agendaList" class="divide-y">
+            <div class="px-4 py-4 text-sm text-slate-600">Caricamento…</div>
+          </div>
+        </div>
+      </div>
+
+      <!--
+        Colonna laterale con i flussi più frequenti del clinico.
+        Fornisce accesso immediato alle viste operative principali.
+      -->
+      <aside class="rounded-2xl border bg-white p-6 shadow-sm">
+        <h2 class="text-lg font-semibold">Azioni rapide</h2>
+        <p class="mt-1 text-sm text-slate-600">Flussi tipici per il clinico.</p>
+
+        <div class="mt-5 grid gap-2">
+          <a class="rounded-xl border px-4 py-3 hover:bg-slate-50" href="./agenda.html">
+            <div class="font-medium">Apri agenda</div>
+            <div class="text-xs text-slate-500">appuntamenti e stati</div>
+          </a>
+          <a class="rounded-xl border px-4 py-3 hover:bg-slate-50" href="./ai-assistant.html">
+            <div class="font-medium">Supporto consultivo</div>
+            <div class="text-xs text-slate-500">linee guida e protocolli</div>
+          </a>
+          <a class="rounded-xl border px-4 py-3 hover:bg-slate-50" href="./profile.html">
+            <div class="font-medium">Aggiorna profilo</div>
+            <div class="text-xs text-slate-500">dati e preferenze</div>
+          </a>
+        </div>
+      </aside>
+    </section>
+
+    <!-- Contenitore per errori globali della pagina mostrati lato client -->
+    <div id="pageError" class="hidden mt-6 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700"
+      role="alert" aria-live="polite"></div>
+  </main>
+
+  <!-- Placeholder dei componenti condivisi renderizzati dinamicamente lato client -->
+  <div data-component="footer"></div>
+  <div data-component="modal"></div>
+</body>
+
+</html>

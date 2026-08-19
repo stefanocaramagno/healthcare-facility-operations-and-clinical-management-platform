@@ -1,0 +1,74 @@
+<!--
+  File: services/core-service/src/CoreService.Api/CoreService.Api.csproj
+
+  Scopo:
+  Definire il progetto .NET del layer API del Core Service, specificando
+  SDK utilizzato, target framework, impostazioni di compilazione,
+  dipendenze NuGet necessarie all’esposizione degli endpoint HTTP
+  e riferimenti ai progetti interni da cui dipende il layer di ingresso.
+
+  Ruolo nel sistema:
+  Questo file configura il progetto `CoreService.Api`, cioè il punto
+  di accesso HTTP del Core Service. Il progetto ospita controller,
+  configurazione dell’host ASP.NET Core, pipeline middleware,
+  autenticazione e integrazione con i layer Application e Infrastructure
+  per l’esecuzione dei casi d’uso del sistema.
+
+  Note:
+  Il progetto utilizza `Microsoft.NET.Sdk.Web`, quindi è configurato
+  come applicazione ASP.NET Core. Le dipendenze incluse supportano
+  documentazione OpenAPI/Swagger e autenticazione JWT Bearer, mentre
+  i riferimenti ai progetti interni collegano il layer API alla logica
+  applicativa e alle implementazioni infrastrutturali.
+-->
+
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <!--
+    Proprietà generali del progetto.
+    Definiscono framework di destinazione e principali impostazioni
+    di compilazione e qualità del codice.
+  -->
+  <PropertyGroup>
+    <!-- Target framework .NET utilizzato dal progetto API. -->
+    <TargetFramework>net8.0</TargetFramework>
+
+    <!-- Abilita il controllo di nullabilità a compile-time. -->
+    <Nullable>enable</Nullable>
+
+    <!-- Abilita gli implicit using standard del framework. -->
+    <ImplicitUsings>enable</ImplicitUsings>
+
+    <!-- Disabilita la generazione del file XML di documentazione in fase di build. -->
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <!--
+    Dipendenze NuGet esterne del layer API.
+    Supportano documentazione OpenAPI/Swagger e autenticazione JWT Bearer.
+  -->
+  <ItemGroup>
+    <!-- Integrazione OpenAPI nativa lato ASP.NET Core. -->
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.11" />
+
+    <!-- Generazione e pubblicazione dell’interfaccia Swagger/OpenAPI. -->
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
+
+    <!-- Supporto all’autenticazione tramite token JWT Bearer. -->
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.11" />
+  </ItemGroup>
+
+  <!--
+    Riferimenti ai progetti interni della solution.
+    Collegano il layer API alla logica applicativa e alle implementazioni
+    infrastrutturali concrete usate a runtime.
+  -->
+  <ItemGroup>
+    <!-- Accesso ai servizi applicativi, contratti e casi d’uso del sistema. -->
+    <ProjectReference Include="..\CoreService.Application\CoreService.Application.csproj" />
+
+    <!-- Accesso a persistenza, integrazioni e wiring infrastrutturale. -->
+    <ProjectReference Include="..\CoreService.Infrastructure\CoreService.Infrastructure.csproj" />
+  </ItemGroup>
+
+</Project>

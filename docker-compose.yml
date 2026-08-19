@@ -1,0 +1,131 @@
+# File: docker-compose.yml
+#
+# Scopo
+# -----
+# Orchestrare l'avvio coordinato dell'intero ambiente applicativo in locale,
+# includendo database, servizi backend, API Gateway, modulo AI, frontend
+# e componente di supporto per l'ispezione delle email.
+#
+# Ruolo nel sistema
+# -----------------
+# Questo file rappresenta il punto di bootstrap principale del progetto
+# in ambiente Docker Compose, permettendo l'esecuzione integrata di tutti
+# i componenti necessari al funzionamento della piattaforma.
+#
+# Note
+# ----
+# - Le variabili sensibili e i parametri configurabili vengono letti dal file .env.
+# - L'ordine logico di avvio è gestito tramite depends_on e, dove necessario,
+#   tramite healthcheck per evitare che i servizi applicativi partano prima
+#   della disponibilità effettiva delle dipendenze critiche.
+
+services:
+  mysql:
+    # Database relazionale centrale del sistema.
+    # Ospita gli schemi applicativi utilizzati dai servizi backend.
+    image: mysql:8.0
+    container_name: mysql
+    restart: unless-stopped
+    environment:
+      # Password dell'utente root di MySQL, recuperata dal file .env.
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    ports:
+      # Espone MySQL sulla porta configurabile dell'host, con fallback a 3306.
+      - "${MYSQL_PORT:-3306}:3306"
+    volumes:
+      # Volume persistente per conservare i dati del database tra i riavvii.
+      - mysql_data:/var/lib/mysql
+      # Script SQL di inizializzazione eseguiti automaticamente al primo avvio.
+      - ./db/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      # Verifica che MySQL sia realmente pronto a ricevere connessioni
+      # prima dell'avvio dei servizi che ne dipendono.
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+  mailpit:
+    # Servizio di mail testing utilizzato per intercettare e visualizzare
+    # i messaggi email generati dall'applicazione in ambiente locale.
+    image: axllent/mailpit:latest
+    container_name: mailpit
+    restart: unless-stopped
+    ports:
+      # Interfaccia web di Mailpit accessibile dal browser.
+      - "8025:8025"
+
+  core-service:
+    # Backend principale del progetto.
+    # Contiene la logica di business, il dominio applicativo e l'accesso ai dati.
+    build:
+      context: ./services/core-service
+    container_name: core_service
+    restart: unless-stopped
+    env_file:
+      # Carica la configurazione runtime condivisa dal file .env.
+      - ./.env
+    depends_on:
+      mysql:
+        # Il Core Service viene avviato solo dopo che MySQL risulta sano.
+        condition: service_healthy
+    ports:
+      # Espone il servizio ASP.NET Core sulla porta 5000 dell'host.
+      - "5000:8080"
+
+  ai-assistant:
+    # Servizio separato dedicato all'assistente AI consultivo per il personale clinico.
+    build:
+      context: ./services/ai-assistant
+    container_name: ai_assistant
+    restart: unless-stopped
+    env_file:
+      # Riutilizza la configurazione centralizzata del progetto.
+      - ./.env
+    environment:
+      # Directory della cache Hugging Face disponibile all'interno del container.
+      - TRANSFORMERS_CACHE=/root/.cache/huggingface/hub
+      # Livello di logging del servizio Django/DRF.
+      - DJANGO_LOG_LEVEL=INFO
+    volumes:
+      # Monta in sola lettura la cache locale dei modelli/asset Hugging Face,
+      # evitando download ridondanti e preservando l'immutabilità runtime.
+      - ./hf_cache:/root/.cache/huggingface/hub:ro
+    ports:
+      # Espone il servizio AI sulla porta 8001 dell'host.
+      - "8001:8000"
+
+  api-gateway:
+    # Punto di ingresso unico per il frontend.
+    # Si occupa di routing, responsabilità trasversali e forwarding verso i servizi backend.
+    build:
+      context: ./services/api-gateway
+    container_name: api_gateway
+    restart: unless-stopped
+    env_file:
+      # Carica la configurazione condivisa necessaria al gateway.
+      - ./.env
+    depends_on:
+      # Il gateway richiede la disponibilità logica dei servizi a cui inoltra le richieste.
+      - core-service
+      - ai-assistant
+    ports:
+      # Espone il gateway sulla porta 8000 dell'host.
+      - "8000:8000"
+
+  frontend:
+    # Interfaccia web del progetto servita tramite container dedicato.
+    build:
+      context: ./frontend
+    container_name: frontend
+    restart: unless-stopped
+    depends_on:
+      # Il frontend viene avviato dopo il gateway, che costituisce il suo backend di riferimento.
+      - api-gateway
+    ports:
+      # Espone il frontend sulla porta 8080 dell'host.
+      - "8080:80"
+
+volumes:
+  # Volume nominato utilizzato per la persistenza dei dati MySQL.
+  mysql_data:

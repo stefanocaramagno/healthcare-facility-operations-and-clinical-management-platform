@@ -1,0 +1,253 @@
+<!--
+  File: frontend/pages/clinician/agenda.html
+
+  Scopo
+  -----
+  Definire la pagina clinica dedicata alla consultazione dell’agenda del
+  professionista sanitario, consentendo la visualizzazione degli appuntamenti
+  programmati e dello storico, con filtri rapidi e accesso ai dettagli.
+
+  Ruolo nel sistema
+  -----------------
+  Questa pagina appartiene all’area Clinician del portale e rappresenta la
+  vista operativa da cui il professionista sanitario consulta la propria agenda,
+  filtra gli appuntamenti per periodo, stato o ricerca testuale e accede alle
+  informazioni di dettaglio dei singoli elementi.
+
+  Note
+  ----
+  Il file contiene il markup strutturale della pagina e i placeholder DOM
+  utilizzati dal relativo script JavaScript. La logica di autenticazione,
+  caricamento degli appuntamenti, applicazione dei filtri, aggiornamento delle
+  statistiche, renderizzazione della tabella e apertura dei dettagli è
+  demandata ai moduli caricati in `../../js/common/` e in
+  `../../js/clinician/agenda.js`.
+-->
+
+<!doctype html>
+<html lang="it">
+
+<head>
+  <!-- Metadati di base del documento HTML -->
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Titolo mostrato nella scheda del browser -->
+  <title>Agenda | Healthcare Portal</title>
+
+  <!-- Risorse statiche condivise della pagina -->
+  <link rel="icon" href="../../assets/favicon.ico" />
+  <link rel="stylesheet" href="../../css/styles.css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!--
+    Script condivisi e specifici della pagina.
+    Vengono caricati con `defer` per eseguire la logica applicativa
+    dopo il parsing completo del documento HTML.
+  -->
+  <script defer src="../../js/common/utils.js"></script>
+  <script defer src="../../js/common/session.js"></script>
+  <script defer src="../../js/common/auth.js"></script>
+  <script defer src="../../js/common/ui-components.js"></script>
+  <script defer src="../../js/clinician/agenda.js"></script>
+</head>
+
+<body class="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
+  <!-- Placeholder del componente navbar condiviso, sostituito dinamicamente lato client -->
+  <div data-component="navbar"></div>
+
+  <!--
+    Contenuto principale della pagina agenda.
+    Comprende la sezione introduttiva con filtri e statistiche, la tabella
+    degli appuntamenti e l’eventuale messaggio di errore globale.
+  -->
+  <main class="mx-auto w-full max-w-7xl px-4 py-8 flex-1">
+    <!--
+      Sezione introduttiva della pagina.
+      Presenta il contesto operativo dell’agenda clinica e i controlli
+      principali per filtrare e aggiornare la vista.
+    -->
+    <section class="rounded-2xl border bg-white p-6 sm:p-8 shadow-sm">
+      <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
+        <div class="flex-1">
+          <div class="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-sm text-blue-700">
+            <span class="h-2 w-2 rounded-full bg-blue-600"></span>
+            Agenda clinica
+          </div>
+
+          <h1 class="mt-4 text-2xl sm:text-3xl font-semibold tracking-tight">Agenda</h1>
+
+          <p class="mt-2 text-slate-600 leading-relaxed">
+            Consultazione degli appuntamenti programmati e dello storico, con filtri rapidi e accesso ai dettagli.
+          </p>
+        </div>
+
+        <!-- Azione rapida di ritorno verso la dashboard del clinico -->
+        <div class="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
+          <a href="./dashboard.html"
+            class="h-10 inline-flex items-center justify-center rounded-xl border bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-100">
+            Dashboard
+          </a>
+        </div>
+      </div>
+
+      <!--
+        Area filtri principali dell’agenda.
+        Consente di restringere la consultazione per intervallo temporale,
+        stato dell’appuntamento e ricerca testuale.
+      -->
+      <div class="mt-6 grid gap-3 lg:grid-cols-12">
+        <div class="lg:col-span-3">
+          <label class="text-sm font-medium text-slate-700" for="fromDate">Da</label>
+          <input id="fromDate" type="date"
+            class="mt-2 h-11 w-full rounded-xl border px-4 text-sm focus:outline-none focus:ring-4 focus:ring-blue-100" />
+        </div>
+
+        <div class="lg:col-span-3">
+          <label class="text-sm font-medium text-slate-700" for="toDate">A</label>
+          <input id="toDate" type="date"
+            class="mt-2 h-11 w-full rounded-xl border px-4 text-sm focus:outline-none focus:ring-4 focus:ring-blue-100" />
+        </div>
+
+        <div class="lg:col-span-3">
+          <label class="text-sm font-medium text-slate-700" for="statusSelect">Stato</label>
+          <select id="statusSelect"
+            class="mt-2 h-11 w-full rounded-xl border bg-white px-4 text-sm focus:outline-none focus:ring-4 focus:ring-blue-100">
+            <option value="ALL">Tutti</option>
+            <option value="BOOKED">Prenotati</option>
+            <option value="CHECKED_IN">Accettati</option>
+            <option value="COMPLETED">Completati</option>
+            <option value="CANCELED">Annullati</option>
+            <option value="NO_SHOW">Assenti</option>
+          </select>
+        </div>
+
+        <div class="lg:col-span-3">
+          <label class="text-sm font-medium text-slate-700" for="searchInput">Ricerca</label>
+          <input id="searchInput" type="search" autocomplete="off" placeholder="Paziente, prestazione, note…"
+            class="mt-2 h-11 w-full rounded-xl border px-4 text-sm focus:outline-none focus:ring-4 focus:ring-blue-100" />
+        </div>
+      </div>
+
+      <!--
+        Barra delle azioni sui filtri.
+        Include scorciatoie temporali, aggiornamento manuale della vista
+        e indicatore visuale di caricamento.
+      -->
+      <div class="mt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div class="flex flex-wrap gap-2">
+          <button id="btnToday" type="button"
+            class="h-10 inline-flex items-center rounded-xl border bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-100">
+            Oggi
+          </button>
+          <button id="btnNext7" type="button"
+            class="h-10 inline-flex items-center rounded-xl border bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-100">
+            Prossimi 7 giorni
+          </button>
+          <button id="btnNext30" type="button"
+            class="h-10 inline-flex items-center rounded-xl border bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-100">
+            Prossimi 30 giorni
+          </button>
+          <button id="btnLast30" type="button"
+            class="h-10 inline-flex items-center rounded-xl border bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-100">
+            Ultimi 30 giorni
+          </button>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button id="btnRefresh" type="button"
+            class="h-10 inline-flex items-center justify-center rounded-xl border bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-100">
+            Aggiorna
+          </button>
+
+          <div id="loadingBadge"
+            class="hidden inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-sm text-slate-700">
+            <span class="h-2 w-2 rounded-full bg-slate-500 animate-pulse"></span>
+            Caricamento…
+          </div>
+        </div>
+      </div>
+
+      <!--
+        Riepilogo statistico sintetico della lista corrente.
+        I valori vengono valorizzati dinamicamente in base agli appuntamenti caricati.
+      -->
+      <div class="mt-5 grid grid-cols-3 gap-2 sm:w-[560px]">
+        <div class="rounded-xl border bg-slate-50 px-4 py-3">
+          <div class="text-xs text-slate-500">Totali</div>
+          <div id="statTotal" class="mt-1 text-lg font-semibold">—</div>
+        </div>
+        <div class="rounded-xl border bg-slate-50 px-4 py-3">
+          <div class="text-xs text-slate-500">Oggi</div>
+          <div id="statToday" class="mt-1 text-lg font-semibold">—</div>
+        </div>
+        <div class="rounded-xl border bg-slate-50 px-4 py-3">
+          <div class="text-xs text-slate-500">Futuri</div>
+          <div id="statUpcoming" class="mt-1 text-lg font-semibold">—</div>
+        </div>
+      </div>
+    </section>
+
+    <!--
+      Sezione operativa contenente l’elenco appuntamenti.
+      Da qui il clinico consulta gli elementi dell’agenda e accede
+      al dettaglio del singolo appuntamento.
+    -->
+    <section class="mt-6 rounded-2xl border bg-white p-6 sm:p-8 shadow-sm">
+      <div class="flex items-start justify-between gap-4">
+        <div>
+          <h2 class="text-lg font-semibold">Elenco appuntamenti</h2>
+          <p class="mt-1 text-sm text-slate-600">Selezioni un appuntamento per visualizzare i dettagli.</p>
+        </div>
+      </div>
+
+      <!-- Stato vuoto mostrato quando non risultano appuntamenti compatibili con i filtri correnti -->
+      <div id="emptyState" class="hidden mt-6 rounded-2xl border bg-slate-50 p-6">
+        <div class="text-sm font-medium text-slate-800">Nessun appuntamento trovato</div>
+        <div class="mt-1 text-sm text-slate-600">
+          Provi a modificare l’intervallo di date o i filtri.
+        </div>
+        <div class="mt-4 flex flex-wrap gap-2">
+          <button id="btnResetFilters" type="button"
+            class="h-10 inline-flex items-center rounded-xl border bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-100">
+            Ripristina filtri
+          </button>
+        </div>
+      </div>
+
+      <!--
+        Tabella principale degli appuntamenti in agenda.
+        Il contenuto del tbody viene popolato dinamicamente dal modulo JavaScript di pagina.
+      -->
+      <div class="mt-6 overflow-x-auto">
+        <table class="min-w-full text-sm">
+          <thead>
+            <tr class="text-left text-xs text-slate-500 border-b">
+              <th class="py-3 pr-4 font-medium">Data/ora</th>
+              <th class="py-3 pr-4 font-medium">Paziente</th>
+              <th class="py-3 pr-4 font-medium">Prestazione</th>
+              <th class="py-3 pr-4 font-medium">Stato</th>
+              <th class="py-3 pr-4 font-medium">Note</th>
+              <th class="py-3 text-right font-medium">Azioni</th>
+            </tr>
+          </thead>
+          <tbody id="agendaTbody" class="divide-y">
+            <tr>
+              <td colspan="6" class="py-6 text-center text-slate-600">Caricamento…</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Contenitore per errori globali della pagina mostrati lato client -->
+    <div id="pageError" class="hidden mt-6 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700"
+      role="alert" aria-live="polite"></div>
+  </main>
+
+  <!-- Placeholder dei componenti condivisi renderizzati dinamicamente lato client -->
+  <div data-component="footer"></div>
+  <div data-component="modal"></div>
+</body>
+
+</html>

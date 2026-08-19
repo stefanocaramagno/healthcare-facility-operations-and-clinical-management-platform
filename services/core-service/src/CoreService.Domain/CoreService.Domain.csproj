@@ -1,0 +1,41 @@
+<!--
+  File: services/core-service/src/CoreService.Domain/CoreService.Domain.csproj
+
+  Scopo:
+  Definire il progetto .NET del layer Domain del Core Service,
+  specificando SDK utilizzato, target framework e impostazioni di
+  compilazione del modulo che contiene il nucleo concettuale del dominio.
+
+  Ruolo nel sistema:
+  Questo file configura il progetto `CoreService.Domain`, cioè il layer
+  che ospita entità, enum, value object e regole centrali del dominio
+  applicativo. Il progetto rappresenta il livello più stabile e astratto
+  dell’architettura del Core Service, indipendente dai dettagli web,
+  applicativi e infrastrutturali.
+
+  Note:
+  Il progetto utilizza `Microsoft.NET.Sdk` ed è configurato come libreria
+  di dominio pura, senza dipendenze aggiuntive esterne o riferimenti ad
+  altri progetti della solution. Questa scelta riflette il ruolo del layer
+  Domain come base concettuale condivisa dagli altri moduli del sistema.
+-->
+
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Proprietà generali del progetto.
+    Definiscono framework di destinazione e principali impostazioni
+    di compilazione e qualità del codice.
+  -->
+  <PropertyGroup>
+    <!-- Target framework .NET utilizzato dal progetto Domain. -->
+    <TargetFramework>net8.0</TargetFramework>
+
+    <!-- Abilita il controllo di nullabilità a compile-time. -->
+    <Nullable>enable</Nullable>
+
+    <!-- Abilita gli implicit using standard del framework. -->
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+</Project>

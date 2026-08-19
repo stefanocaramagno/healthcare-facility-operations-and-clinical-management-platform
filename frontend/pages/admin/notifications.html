@@ -1,0 +1,268 @@
+<!--
+  File: frontend/pages/admin/notifications.html
+
+  Scopo
+  -----
+  Definire la pagina amministrativa dedicata alla consultazione e alla gestione
+  delle comunicazioni inviate ai destinatari del portale, includendo filtri,
+  statistiche sintetiche, apertura del dettaglio e accesso alla creazione di
+  una nuova comunicazione.
+
+  Ruolo nel sistema
+  -----------------
+  Questa pagina appartiene all’area Admin del portale e rappresenta il punto
+  operativo da cui l’operatore amministrativo monitora notifiche e promemoria,
+  ne analizza lo stato di lettura e consulta il contenuto dei messaggi già
+  inviati ai destinatari.
+
+  Note
+  ----
+  Il file contiene il markup strutturale della pagina e i placeholder DOM
+  utilizzati dal relativo script JavaScript. La logica di autenticazione,
+  caricamento dei dati, applicazione dei filtri, ordinamento, aggiornamento
+  delle statistiche, apertura del dettaglio e gestione delle modali è
+  demandata ai moduli caricati in `../../js/common/` e in
+  `../../js/admin/notifications.js`.
+-->
+
+<!doctype html>
+<html lang="it">
+
+<head>
+  <!-- Metadati di base del documento HTML -->
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Titolo mostrato nella scheda del browser -->
+  <title>Notifiche | Healthcare Portal</title>
+
+  <!-- Risorse statiche condivise della pagina -->
+  <link rel="icon" href="../../assets/favicon.ico" />
+  <link rel="stylesheet" href="../../css/styles.css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!--
+    Script condivisi e specifici della pagina.
+    Vengono caricati con `defer` per eseguire la logica applicativa
+    dopo il parsing completo del documento HTML.
+  -->
+  <script defer src="../../js/common/utils.js"></script>
+  <script defer src="../../js/common/session.js"></script>
+  <script defer src="../../js/common/auth.js"></script>
+  <script defer src="../../js/common/ui-components.js"></script>
+  <script defer src="../../js/admin/notifications.js"></script>
+</head>
+
+<body class="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
+  <!-- Placeholder del componente navbar condiviso, sostituito dinamicamente lato client -->
+  <div data-component="navbar"></div>
+
+  <!--
+    Contenuto principale della pagina notifiche.
+    Comprende la sezione introduttiva con filtri e statistiche, la tabella
+    delle comunicazioni e l’eventuale messaggio di errore globale.
+  -->
+  <main class="mx-auto max-w-7xl px-4 py-8 flex-1">
+    <!--
+      Sezione introduttiva della pagina.
+      Presenta il contesto operativo della gestione comunicazioni, l’accesso
+      rapido alla creazione di una nuova notifica, i controlli di filtro
+      e il riepilogo statistico.
+    -->
+    <section class="rounded-2xl border bg-white p-6 sm:p-8 shadow-sm">
+      <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
+        <div class="flex-1">
+          <div class="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-sm text-blue-700">
+            <span class="h-2 w-2 rounded-full bg-blue-600"></span>
+            Gestione comunicazioni
+          </div>
+
+          <h1 class="mt-4 text-2xl sm:text-3xl font-semibold tracking-tight">Notifiche</h1>
+
+          <p class="mt-2 text-slate-600 leading-relaxed">
+            Consultazione e gestione di comunicazioni e promemoria indirizzati ai destinatari. Lo stato di lettura
+            riflette la presa visione da parte del destinatario.
+          </p>
+        </div>
+
+        <!-- Azioni rapide della pagina e indicatore di caricamento globale -->
+        <div class="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
+          <button id="btnOpenCreate" type="button"
+            class="h-10 inline-flex items-center justify-center rounded-xl bg-blue-600 px-4 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-100">
+            Nuova comunicazione
+          </button>
+
+          <a href="./dashboard.html"
+            class="h-10 inline-flex items-center justify-center rounded-xl border bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-100">
+            Dashboard
+          </a>
+
+          <div id="loadingBadge"
+            class="hidden inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-sm text-slate-700">
+            <span class="h-2 w-2 rounded-full bg-slate-500 animate-pulse"></span>
+            Caricamento…
+          </div>
+        </div>
+      </div>
+
+      <!--
+        Area filtri principali della lista notifiche.
+        Consente di restringere la consultazione per testo libero, ordinamento
+        cronologico e intervallo temporale.
+      -->
+      <div class="mt-6 grid gap-3 lg:grid-cols-12">
+        <div class="lg:col-span-4">
+          <label class="text-sm font-medium text-slate-700" for="searchInput">Ricerca</label>
+          <input id="searchInput" type="search" autocomplete="off" placeholder="Oggetto o contenuto…"
+            class="mt-2 h-11 w-full rounded-xl border px-4 text-sm focus:outline-none focus:ring-4 focus:ring-blue-100" />
+        </div>
+
+        <div class="lg:col-span-2">
+          <label class="text-sm font-medium text-slate-700" for="sortSelect">Ordina</label>
+          <select id="sortSelect"
+            class="mt-2 h-11 w-full rounded-xl border bg-white px-4 text-sm focus:outline-none focus:ring-4 focus:ring-blue-100">
+            <option value="NEWEST">Più recenti</option>
+            <option value="OLDEST">Più vecchie</option>
+          </select>
+        </div>
+
+        <div class="lg:col-span-3">
+          <label class="text-sm font-medium text-slate-700" for="fromDate">Da</label>
+          <input id="fromDate" type="date"
+            class="mt-2 h-11 w-full rounded-xl border px-4 text-sm focus:outline-none focus:ring-4 focus:ring-blue-100" />
+        </div>
+
+        <div class="lg:col-span-3">
+          <label class="text-sm font-medium text-slate-700" for="toDate">A</label>
+          <input id="toDate" type="date"
+            class="mt-2 h-11 w-full rounded-xl border px-4 text-sm focus:outline-none focus:ring-4 focus:ring-blue-100" />
+        </div>
+      </div>
+
+      <!--
+        Barra delle azioni sui filtri.
+        Include scorciatoie temporali, ripristino dello stato iniziale e
+        filtri aggiuntivi su lettura e destinatario.
+      -->
+      <div class="mt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div class="flex flex-wrap gap-2">
+          <button id="btnLast30" type="button"
+            class="h-10 inline-flex items-center rounded-xl border bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-100">
+            Ultimi 30 giorni
+          </button>
+          <button id="btnLast90" type="button"
+            class="h-10 inline-flex items-center rounded-xl border bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-100">
+            Ultimi 3 mesi
+          </button>
+          <button id="btnAll" type="button"
+            class="h-10 inline-flex items-center rounded-xl border bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-100">
+            Tutte
+          </button>
+          <button id="btnResetFilters" type="button"
+            class="h-10 inline-flex items-center rounded-xl border bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-100">
+            Ripristina
+          </button>
+        </div>
+
+        <!-- Filtri avanzati applicabili direttamente alla lista comunicazioni -->
+        <div class="flex items-center gap-3">
+          <label
+            class="h-11 inline-flex items-center gap-3 rounded-xl border bg-white px-4 text-sm text-slate-700 hover:bg-slate-50 cursor-pointer select-none focus-within:outline-none focus-within:ring-4 focus-within:ring-blue-100">
+            <input id="onlyUnread" type="checkbox" class="h-4 w-4 rounded border-slate-300" />
+            <span>Mostra solo non lette</span>
+          </label>
+
+          <div class="w-[260px]">
+            <label class="sr-only" for="recipientInput">Destinatario</label>
+            <input id="recipientInput" type="text" autocomplete="off" placeholder="Filtra per destinatario…"
+              class="h-11 w-full rounded-xl border px-4 text-sm focus:outline-none focus:ring-4 focus:ring-blue-100" />
+          </div>
+        </div>
+      </div>
+
+      <!--
+        Riepilogo statistico sintetico della lista corrente.
+        I valori vengono valorizzati dinamicamente in base alle comunicazioni caricate.
+      -->
+      <div class="mt-5 grid grid-cols-3 gap-2 sm:w-[560px]">
+        <div class="rounded-xl border bg-slate-50 px-4 py-3">
+          <div class="text-xs text-slate-500">Totali</div>
+          <div id="statTotal" class="mt-1 text-lg font-semibold">—</div>
+        </div>
+        <div class="rounded-xl border bg-slate-50 px-4 py-3">
+          <div class="text-xs text-slate-500">Non lette</div>
+          <div id="statUnread" class="mt-1 text-lg font-semibold">—</div>
+        </div>
+        <div class="rounded-xl border bg-slate-50 px-4 py-3">
+          <div class="text-xs text-slate-500">Più recente</div>
+          <div id="statLatest" class="mt-1 text-lg font-semibold">—</div>
+        </div>
+      </div>
+    </section>
+
+    <!--
+      Sezione operativa contenente l’elenco delle comunicazioni inviate.
+      Da qui l’utente amministrativo consulta il dettaglio dei messaggi e
+      il relativo stato di lettura.
+    -->
+    <section class="mt-6 rounded-2xl border bg-white p-6 sm:p-8 shadow-sm">
+      <div class="flex items-start justify-between gap-4">
+        <div>
+          <h2 class="text-lg font-semibold">Elenco comunicazioni</h2>
+          <p class="mt-1 text-sm text-slate-600">
+            Selezioni una comunicazione per visualizzare il dettaglio. Lo stato indica se il destinatario ha preso
+            visione.
+          </p>
+        </div>
+      </div>
+
+      <!-- Stato vuoto mostrato quando non risultano comunicazioni compatibili con i filtri correnti -->
+      <div id="emptyState" class="hidden mt-6 rounded-2xl border bg-slate-50 p-6">
+        <div class="text-sm font-medium text-slate-800">Nessuna comunicazione trovata</div>
+        <div class="mt-1 text-sm text-slate-600">
+          Provi a modificare filtri o intervallo di date.
+        </div>
+        <div class="mt-4 flex flex-wrap gap-2">
+          <button id="btnEmptyReset" type="button"
+            class="h-10 inline-flex items-center rounded-xl border bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-100">
+            Ripristina filtri
+          </button>
+        </div>
+      </div>
+
+      <!--
+        Tabella principale delle comunicazioni.
+        Il contenuto del tbody viene popolato dinamicamente dal modulo JavaScript di pagina.
+      -->
+      <div class="mt-6 overflow-x-auto">
+        <table class="min-w-full text-sm">
+          <thead>
+            <tr class="text-left text-xs text-slate-500 border-b">
+              <th class="py-3 pr-4 font-medium">Data</th>
+              <th class="py-3 pr-4 font-medium">Destinatario</th>
+              <th class="py-3 pr-4 font-medium">Oggetto</th>
+              <th class="py-3 pr-4 font-medium">Stato</th>
+              <th class="py-3 pr-4 font-medium">Tipo</th>
+              <th class="py-3 text-right font-medium">Azioni</th>
+            </tr>
+          </thead>
+          <tbody id="tbody" class="divide-y">
+            <tr>
+              <td colspan="6" class="py-6 text-center text-slate-600">Caricamento…</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Contenitore per errori globali della pagina mostrati lato client -->
+    <div id="pageError" class="hidden mt-6 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700"
+      role="alert" aria-live="polite"></div>
+  </main>
+
+  <!-- Placeholder dei componenti condivisi renderizzati dinamicamente lato client -->
+  <div data-component="footer"></div>
+  <div data-component="modal"></div>
+</body>
+
+</html>

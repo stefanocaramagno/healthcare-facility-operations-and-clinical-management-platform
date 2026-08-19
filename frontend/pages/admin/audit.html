@@ -1,0 +1,350 @@
+<!--
+  File: frontend/pages/admin/audit.html
+
+  Scopo
+  -----
+  Definire la pagina amministrativa dedicata alla consultazione del registro
+  audit applicativo, consentendo il filtraggio degli eventi sensibili del
+  sistema e la consultazione del relativo dettaglio tecnico sintetico.
+
+  Ruolo nel sistema
+  -----------------
+  Questa pagina appartiene all’area Admin del portale e rappresenta il punto
+  operativo da cui l’operatore amministrativo monitora la tracciabilità delle
+  operazioni significative eseguite nei diversi domini del sistema
+  (prenotazioni, pagamenti, encounter clinici, referti, pre-triage, ecc.),
+  senza esporre contenuti clinici riservati.
+
+  Note
+  ----
+  Il file contiene il markup strutturale della pagina e i placeholder DOM
+  utilizzati dal relativo script JavaScript. La logica di autenticazione,
+  caricamento eventi, applicazione dei filtri, aggiornamento delle statistiche,
+  renderizzazione della tabella e apertura del dettaglio evento è demandata
+  ai moduli caricati in `../../js/common/` e in `../../js/admin/audit.js`.
+-->
+
+<!doctype html>
+<html lang="it">
+
+<head>
+  <!-- Metadati di base del documento HTML -->
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Titolo mostrato nella scheda del browser -->
+  <title>Audit | Healthcare Portal</title>
+
+  <!-- Risorse statiche condivise della pagina -->
+  <link rel="icon" href="../../assets/favicon.ico" />
+  <link rel="stylesheet" href="../../css/styles.css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!--
+    Script condivisi e specifici della pagina.
+    Vengono caricati con `defer` per eseguire la logica applicativa
+    dopo il parsing completo del documento HTML.
+  -->
+  <script defer src="../../js/common/utils.js"></script>
+  <script defer src="../../js/common/session.js"></script>
+  <script defer src="../../js/common/auth.js"></script>
+  <script defer src="../../js/common/ui-components.js"></script>
+  <script defer src="../../js/admin/audit.js"></script>
+</head>
+
+<body class="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
+  <!-- Placeholder del componente navbar condiviso, sostituito dinamicamente lato client -->
+  <div data-component="navbar"></div>
+
+  <!--
+    Contenuto principale della pagina audit.
+    Comprende la sezione introduttiva con filtri e statistiche, la tabella
+    del registro eventi e l’eventuale messaggio di errore globale.
+  -->
+  <main class="mx-auto max-w-7xl px-4 py-8 flex-1">
+    <!--
+      Sezione introduttiva della pagina.
+      Presenta il contesto della tracciabilità operativa, i filtri principali
+      per interrogare l’audit log e il riepilogo statistico degli eventi mostrati.
+    -->
+    <section class="rounded-2xl border bg-white p-6 sm:p-8 shadow-sm">
+      <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
+        <div class="flex-1">
+          <div class="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-sm text-blue-700">
+            <span class="h-2 w-2 rounded-full bg-blue-600"></span>
+            Tracciabilità operativa
+          </div>
+
+          <h1 class="mt-4 text-2xl sm:text-3xl font-semibold tracking-tight">Audit log</h1>
+
+          <p class="mt-2 text-slate-600 leading-relaxed">
+            Consultazione del registro applicativo delle operazioni sensibili. La vista è pensata per finalità
+            di tracciabilità e controllo operativo e non espone contenuti clinici riservati.
+          </p>
+        </div>
+
+        <!-- Azioni rapide della pagina e indicatore di caricamento globale -->
+        <div class="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
+          <a href="./dashboard.html"
+            class="h-10 inline-flex items-center justify-center rounded-xl border bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-100">
+            Dashboard
+          </a>
+
+          <div id="loadingBadge"
+            class="hidden inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-sm text-slate-700">
+            <span class="h-2 w-2 rounded-full bg-slate-500 animate-pulse"></span>
+            Caricamento…
+          </div>
+        </div>
+      </div>
+
+      <!--
+        Area filtri dell’audit log.
+        Consente di restringere il perimetro della ricerca per attore, azione,
+        entità, identificativo, intervallo temporale, requestId, esito e limite.
+      -->
+      <div class="mt-6 grid gap-3 lg:grid-cols-12">
+        <div class="lg:col-span-3">
+          <label class="text-sm font-medium text-slate-700" for="actorUserId">Attore</label>
+          <input id="actorUserId" type="text" autocomplete="off" placeholder="GUID completo o parziale dell’attore"
+            class="mt-2 h-11 w-full rounded-xl border px-4 text-sm focus:outline-none focus:ring-4 focus:ring-blue-100" />
+        </div>
+
+        <div class="lg:col-span-3">
+          <label class="text-sm font-medium text-slate-700" for="actionSelect">Azione</label>
+          <select id="actionSelect"
+            class="mt-2 h-11 w-full rounded-xl border bg-white px-4 text-sm focus:outline-none focus:ring-4 focus:ring-blue-100">
+            <option value="">Tutte</option>
+            <option value="ADMIN_CREATE_SLOTS">Admin · creazione slot</option>
+            <option value="ADMIN_UPDATE_SLOT_STATUS">Admin · aggiornamento slot</option>
+            <option value="ADMIN_BOOK_APPOINTMENT">Admin · prenotazione</option>
+            <option value="ADMIN_CANCEL_APPOINTMENT">Admin · annullamento appuntamento</option>
+            <option value="ADMIN_RESCHEDULE_APPOINTMENT">Admin · ripianificazione appuntamento</option>
+            <option value="ADMIN_CHECKIN_APPOINTMENT">Admin · check-in appuntamento</option>
+
+            <option value="PATIENT_BOOK_APPOINTMENT">Paziente · prenotazione</option>
+            <option value="PATIENT_CANCEL_APPOINTMENT">Paziente · annullamento appuntamento</option>
+            <option value="PATIENT_RESCHEDULE_APPOINTMENT">Paziente · ripianificazione appuntamento</option>
+
+            <option value="DELEGATE_BOOK_APPOINTMENT">Delegato · prenotazione</option>
+            <option value="DELEGATE_RESCHEDULE_APPOINTMENT">Delegato · ripianificazione appuntamento</option>
+            <option value="DELEGATE_CANCEL_APPOINTMENT">Delegato · annullamento appuntamento</option>
+
+            <option value="PATIENT_UPSERT_PRETRIAGE">Paziente · pre-triage</option>
+            <option value="DELEGATE_UPSERT_PRETRIAGE">Delegato · pre-triage</option>
+
+            <option value="CLINICIAN_VIEW_ENCOUNTER">Clinico · apertura encounter</option>
+            <option value="CLINICIAN_START_ENCOUNTER">Clinico · avvio encounter</option>
+            <option value="CLINICIAN_ADD_ANAMNESIS">Clinico · anamnesi</option>
+            <option value="CLINICIAN_RECORD_VITAL_SIGN">Clinico · parametri vitali</option>
+            <option value="CLINICIAN_CREATE_ORDER">Clinico · ordine clinico</option>
+            <option value="CLINICIAN_RECORD_EXECUTION">Clinico · esecuzione procedura</option>
+            <option value="CLINICIAN_UPSERT_REPORT">Clinico · referto draft</option>
+            <option value="CLINICIAN_SIGN_REPORT">Clinico · firma referto</option>
+            <option value="CLINICIAN_PUBLISH_REPORT">Clinico · pubblicazione referto</option>
+            <option value="CLINICIAN_COMPLETE_ENCOUNTER">Clinico · chiusura encounter</option>
+
+            <option value="PATIENT_VIEW_REPORTS">Paziente · consultazione referti</option>
+            <option value="DELEGATE_VIEW_REPORTS">Delegato · consultazione referti</option>
+
+            <option value="PATIENT_CREATE_PAYMENT_INTENT">Paziente · avvio pagamento</option>
+            <option value="PATIENT_PROCESS_PAYMENT">Paziente · pagamento</option>
+            <option value="DELEGATE_CREATE_PAYMENT_INTENT">Delegato · avvio pagamento</option>
+            <option value="DELEGATE_PROCESS_PAYMENT">Delegato · pagamento</option>
+            <option value="ADMIN_REGISTER_IN_PERSON_PAYMENT">Admin · pagamento in sede</option>
+            <option value="ADMIN_RECONCILE_PAYMENT">Admin · riconciliazione pagamento</option>
+            <option value="ADMIN_SIMULATE_PROVIDER_OUTCOME">Admin · simulazione esito provider</option>
+          </select>
+        </div>
+
+        <div class="lg:col-span-2">
+          <label class="text-sm font-medium text-slate-700" for="entityTypeSelect">Entità</label>
+          <select id="entityTypeSelect"
+            class="mt-2 h-11 w-full rounded-xl border bg-white px-4 text-sm focus:outline-none focus:ring-4 focus:ring-blue-100">
+            <option value="">Tutte</option>
+            <option value="AvailabilitySlotBatch">Batch slot</option>
+            <option value="AvailabilitySlot">Slot</option>
+            <option value="Appointment">Appuntamento</option>
+            <option value="PreTriageQuestionnaire">Pre-triage</option>
+            <option value="ClinicalEncounter">Encounter clinico</option>
+            <option value="AnamnesisRecord">Anamnesi</option>
+            <option value="VitalSign">Parametro vitale</option>
+            <option value="ClinicalOrder">Ordine clinico</option>
+            <option value="ProcedureExecution">Esecuzione procedura</option>
+            <option value="ClinicalReport">Referto clinico</option>
+            <option value="ClinicalReportCollection">Collezione referti</option>
+            <option value="PaymentIntent">Intent di pagamento</option>
+          </select>
+        </div>
+
+        <div class="lg:col-span-2">
+          <label class="text-sm font-medium text-slate-700" for="entityIdInput">EntityId</label>
+          <input id="entityIdInput" type="text" autocomplete="off" placeholder="GUID o identificativo"
+            class="mt-2 h-11 w-full rounded-xl border px-4 text-sm focus:outline-none focus:ring-4 focus:ring-blue-100" />
+        </div>
+
+        <div class="lg:col-span-2">
+          <label class="text-sm font-medium text-slate-700" for="limitSelect">Limite</label>
+          <select id="limitSelect"
+            class="mt-2 h-11 w-full rounded-xl border bg-white px-4 text-sm focus:outline-none focus:ring-4 focus:ring-blue-100">
+            <option value="50">50</option>
+            <option value="100">100</option>
+            <option value="200" selected>200</option>
+            <option value="300">300</option>
+            <option value="500">500</option>
+          </select>
+        </div>
+
+        <div class="lg:col-span-3">
+          <label class="text-sm font-medium text-slate-700" for="fromDate">Da</label>
+          <input id="fromDate" type="date"
+            class="mt-2 h-11 w-full rounded-xl border px-4 text-sm focus:outline-none focus:ring-4 focus:ring-blue-100" />
+        </div>
+
+        <div class="lg:col-span-3">
+          <label class="text-sm font-medium text-slate-700" for="toDate">A</label>
+          <input id="toDate" type="date"
+            class="mt-2 h-11 w-full rounded-xl border px-4 text-sm focus:outline-none focus:ring-4 focus:ring-blue-100" />
+        </div>
+
+        <div class="lg:col-span-3">
+          <label class="text-sm font-medium text-slate-700" for="requestIdInput">RequestId</label>
+          <input id="requestIdInput" type="text" autocomplete="off" placeholder="Filtro client-side opzionale"
+            class="mt-2 h-11 w-full rounded-xl border px-4 text-sm focus:outline-none focus:ring-4 focus:ring-blue-100" />
+        </div>
+
+        <div class="lg:col-span-3">
+          <label class="text-sm font-medium text-slate-700" for="outcomeSelect">Esito</label>
+          <select id="outcomeSelect"
+            class="mt-2 h-11 w-full rounded-xl border bg-white px-4 text-sm focus:outline-none focus:ring-4 focus:ring-blue-100">
+            <option value="">Tutti</option>
+            <option value="Succeeded">Succeeded</option>
+            <option value="Denied">Denied</option>
+            <option value="Rejected">Rejected</option>
+            <option value="Failed">Failed</option>
+          </select>
+        </div>
+      </div>
+
+      <!--
+        Barra delle scorciatoie temporali e delle azioni rapide sui filtri.
+        Consente di applicare preset temporali o di ripristinare lo stato iniziale.
+      -->
+      <div class="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div class="flex flex-wrap gap-2">
+          <button id="btnLast24h" type="button"
+            class="h-10 inline-flex items-center rounded-xl border bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-100">
+            Ultime 24 ore
+          </button>
+
+          <button id="btnLast7d" type="button"
+            class="h-10 inline-flex items-center rounded-xl border bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-100">
+            Ultimi 7 giorni
+          </button>
+
+          <button id="btnLast30d" type="button"
+            class="h-10 inline-flex items-center rounded-xl border bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-100">
+            Ultimi 30 giorni
+          </button>
+
+          <button id="btnResetFilters" type="button"
+            class="h-10 inline-flex items-center rounded-xl border bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-100">
+            Ripristina
+          </button>
+        </div>
+
+        <div class="text-sm text-slate-500">
+          Vista orientata alla tracciabilità amministrativa.
+        </div>
+      </div>
+
+      <!--
+        Riepilogo statistico sintetico degli eventi correntemente mostrati.
+        I valori vengono valorizzati dinamicamente dal modulo JavaScript di pagina.
+      -->
+      <div class="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4 sm:w-[760px]">
+        <div class="rounded-xl border bg-slate-50 px-4 py-3">
+          <div class="text-xs text-slate-500">Elementi mostrati</div>
+          <div id="statTotal" class="mt-1 text-lg font-semibold">—</div>
+        </div>
+        <div class="rounded-xl border bg-slate-50 px-4 py-3">
+          <div class="text-xs text-slate-500">Succeeded</div>
+          <div id="statSucceeded" class="mt-1 text-lg font-semibold">—</div>
+        </div>
+        <div class="rounded-xl border bg-slate-50 px-4 py-3">
+          <div class="text-xs text-slate-500">Denied / Failed</div>
+          <div id="statCritical" class="mt-1 text-lg font-semibold">—</div>
+        </div>
+        <div class="rounded-xl border bg-slate-50 px-4 py-3">
+          <div class="text-xs text-slate-500">Più recente</div>
+          <div id="statLatest" class="mt-1 text-lg font-semibold">—</div>
+        </div>
+      </div>
+    </section>
+
+    <!--
+      Sezione operativa contenente il registro eventi.
+      Da qui l’utente amministrativo consulta gli eventi audit e può aprire
+      il dettaglio sintetico del singolo record tracciato.
+    -->
+    <section class="mt-6 rounded-2xl border bg-white p-6 sm:p-8 shadow-sm">
+      <div class="flex items-start justify-between gap-4">
+        <div>
+          <h2 class="text-lg font-semibold">Registro eventi</h2>
+          <p class="mt-1 text-sm text-slate-600">
+            Selezioni una riga per visualizzare il dettaglio tecnico sintetico dell’operazione tracciata.
+          </p>
+        </div>
+      </div>
+
+      <!-- Stato vuoto mostrato quando non risultano eventi compatibili con i filtri correnti -->
+      <div id="emptyState" class="hidden mt-6 rounded-2xl border bg-slate-50 p-6">
+        <div class="text-sm font-medium text-slate-800">Nessun evento trovato</div>
+        <div class="mt-1 text-sm text-slate-600">
+          Provi a modificare i filtri impostati o ad ampliare l’intervallo temporale.
+        </div>
+        <div class="mt-4 flex flex-wrap gap-2">
+          <button id="btnEmptyReset" type="button"
+            class="h-10 inline-flex items-center rounded-xl border bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-100">
+            Ripristina filtri
+          </button>
+        </div>
+      </div>
+
+      <!--
+        Tabella principale dell’audit log.
+        Il contenuto del tbody viene popolato dinamicamente dal modulo JavaScript di pagina.
+      -->
+      <div class="mt-6 overflow-x-auto">
+        <table class="min-w-full text-sm">
+          <thead>
+            <tr class="text-left text-xs text-slate-500 border-b">
+              <th class="py-3 pr-4 font-medium">Data</th>
+              <th class="py-3 pr-4 font-medium">Azione</th>
+              <th class="py-3 pr-4 font-medium">Attore</th>
+              <th class="py-3 pr-4 font-medium">Entità</th>
+              <th class="py-3 pr-4 font-medium">Esito</th>
+              <th class="py-3 pr-4 font-medium">RequestId</th>
+              <th class="py-3 text-right font-medium">Azioni</th>
+            </tr>
+          </thead>
+          <tbody id="tbody" class="divide-y">
+            <tr>
+              <td colspan="7" class="py-6 text-center text-slate-600">Caricamento…</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Contenitore per errori globali della pagina mostrati lato client -->
+    <div id="pageError" class="hidden mt-6 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700"
+      role="alert" aria-live="polite"></div>
+  </main>
+
+  <!-- Placeholder dei componenti condivisi renderizzati dinamicamente lato client -->
+  <div data-component="footer"></div>
+  <div data-component="modal"></div>
+</body>
+
+</html>
