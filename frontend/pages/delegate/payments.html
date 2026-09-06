@@ -1,0 +1,360 @@
+<!--
+  File: frontend/pages/delegate/payments.html
+
+  Scopo
+  -----
+  Definire la pagina dell’area Delegate dedicata alla consultazione e,
+  quando consentito dalla delega selezionata, alla gestione operativa dei
+  pagamenti relativi all’assistito, includendo sia lo storico delle
+  operazioni sia l’avvio di un pagamento in-app per una prestazione
+  selezionata.
+
+  Ruolo nel sistema
+  -----------------
+  Questa pagina appartiene all’area Delegate del portale e rappresenta la
+  vista attraverso cui il delegato può selezionare un assistito delegante,
+  consultare lo storico dei pagamenti associati alle sue prestazioni e,
+  nei limiti dei permessi concessi dalla delega, effettuare operazioni di
+  pagamento digitale per conto dell’assistito.
+
+  Note
+  ----
+  Il file contiene il markup strutturale della pagina e i placeholder DOM
+  utilizzati dal relativo script JavaScript. La logica di autenticazione,
+  caricamento delle deleghe, selezione dell’assistito, verifica dei
+  permessi di pagamento, recupero dello storico, popolamento del selettore
+  delle prestazioni pagabili, gestione del riepilogo pagamento, esecuzione
+  delle operazioni, aggiornamento delle statistiche e trattamento degli
+  errori è demandata ai moduli caricati in `../../js/common/` e in
+  `../../js/delegate/payments.js`.
+-->
+
+<!doctype html>
+<html lang="it">
+
+<head>
+  <!-- Metadati di base del documento HTML -->
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Titolo mostrato nella scheda del browser -->
+  <title>Pagamenti | Healthcare Portal</title>
+
+  <!-- Risorse statiche condivise della pagina -->
+  <link rel="icon" href="../../assets/favicon.ico" />
+  <link rel="stylesheet" href="../../css/styles.css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!--
+    Script condivisi e specifici della pagina.
+    Vengono caricati con `defer` per eseguire la logica applicativa
+    dopo il parsing completo del documento HTML.
+  -->
+  <script defer src="../../js/common/utils.js"></script>
+  <script defer src="../../js/common/session.js"></script>
+  <script defer src="../../js/common/auth.js"></script>
+  <script defer src="../../js/common/ui-components.js"></script>
+  <script defer src="../../js/delegate/payments.js"></script>
+</head>
+
+<body class="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
+  <!-- Placeholder del componente navbar condiviso, sostituito dinamicamente lato client -->
+  <div data-component="navbar"></div>
+
+  <!--
+    Contenuto principale della pagina pagamenti delegato.
+    Comprende l’intestazione della vista, l’area di selezione assistito,
+    i filtri di consultazione, il blocco di pagamento in-app, lo storico
+    delle operazioni e il contenitore per eventuali errori globali.
+  -->
+  <main class="mx-auto w-full max-w-7xl px-4 py-8 flex-1">
+    <!--
+      Sezione introduttiva della pagina.
+      Presenta il contesto della vista pagamenti assistito e include
+      i collegamenti rapidi verso l’elenco appuntamenti dell’assistito
+      e la dashboard del delegato.
+    -->
+    <section class="rounded-2xl border bg-white p-6 sm:p-8 shadow-sm">
+      <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
+        <div class="flex-1">
+          <div class="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-sm text-blue-700">
+            <span class="h-2 w-2 rounded-full bg-blue-600"></span>
+            Area pagamenti assistito
+          </div>
+
+          <h1 class="mt-4 text-2xl sm:text-3xl font-semibold tracking-tight">Pagamenti assistito</h1>
+
+          <p class="mt-2 text-slate-600 leading-relaxed">
+            Selezioni l’assistito e consulti lo storico. Le operazioni disponibili dipendono dalla delega.
+          </p>
+        </div>
+
+        <!-- Azioni rapide verso appuntamenti assistito e dashboard -->
+        <div class="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
+          <a id="appointmentsLink" href="./appointments.html"
+            class="h-10 inline-flex items-center justify-center rounded-xl border bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-100">
+            Appuntamenti
+          </a>
+          <a href="./dashboard.html"
+            class="h-10 inline-flex items-center justify-center rounded-xl border bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-100">
+            Dashboard
+          </a>
+        </div>
+      </div>
+
+      <!--
+        Sezione di selezione dell’assistito.
+        Consente al delegato di scegliere il paziente per cui operare
+        e di aggiornare l’elenco delle deleghe disponibili.
+      -->
+      <div class="mt-6 grid gap-3 lg:grid-cols-12">
+        <div class="lg:col-span-6">
+          <label class="text-sm font-medium text-slate-700" for="patientSelect">Assistito</label>
+          <div class="mt-2 flex gap-2">
+            <select id="patientSelect"
+              class="h-11 w-full rounded-xl border bg-white px-4 text-sm focus:outline-none focus:ring-4 focus:ring-blue-100">
+              <option value="">Caricamento…</option>
+            </select>
+            <button id="btnReloadDelegations" type="button"
+              class="h-11 inline-flex items-center justify-center rounded-xl border bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-100">
+              Aggiorna
+            </button>
+          </div>
+
+          <p id="delegationHint" class="mt-2 text-xs text-slate-500">
+            Selezioni un assistito per visualizzare lo storico dei pagamenti.
+          </p>
+        </div>
+      </div>
+
+      <!--
+        Area dei filtri di consultazione dello storico.
+        Permette di restringere l’elenco delle operazioni per intervallo
+        temporale, stato e ricerca testuale.
+      -->
+      <div class="mt-6 grid gap-3 lg:grid-cols-12">
+        <div class="lg:col-span-3">
+          <label class="text-sm font-medium text-slate-700" for="fromDate">Da</label>
+          <input id="fromDate" type="date"
+            class="mt-2 h-11 w-full rounded-xl border px-4 text-sm focus:outline-none focus:ring-4 focus:ring-blue-100" />
+        </div>
+
+        <div class="lg:col-span-3">
+          <label class="text-sm font-medium text-slate-700" for="toDate">A</label>
+          <input id="toDate" type="date"
+            class="mt-2 h-11 w-full rounded-xl border px-4 text-sm focus:outline-none focus:ring-4 focus:ring-blue-100" />
+        </div>
+
+        <div class="lg:col-span-3">
+          <label class="text-sm font-medium text-slate-700" for="statusSelect">Stato</label>
+          <select id="statusSelect"
+            class="mt-2 h-11 w-full rounded-xl border bg-white px-4 text-sm focus:outline-none focus:ring-4 focus:ring-blue-100">
+            <option value="ALL">Tutti</option>
+            <option value="OPEN">In sospeso</option>
+            <option value="SUCCEEDED">Completati</option>
+            <option value="FAILED">Non riusciti</option>
+            <option value="CANCELED">Annullati</option>
+          </select>
+        </div>
+
+        <div class="lg:col-span-3">
+          <label class="text-sm font-medium text-slate-700" for="searchInput">Ricerca</label>
+          <input id="searchInput" type="search" autocomplete="off" placeholder="Prestazione, data, riferimento…"
+            class="mt-2 h-11 w-full rounded-xl border px-4 text-sm focus:outline-none focus:ring-4 focus:ring-blue-100" />
+        </div>
+      </div>
+
+      <!--
+        Barra delle azioni rapide sui filtri e dell’aggiornamento dati.
+        Include range temporali predefiniti, ripristino filtri, refresh
+        esplicito e indicatore di caricamento globale.
+      -->
+      <div class="mt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div class="flex flex-wrap gap-2">
+          <button id="btnLast90" type="button"
+            class="h-10 inline-flex items-center rounded-xl border bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-100">
+            Ultimi 3 mesi
+          </button>
+          <button id="btnLast365" type="button"
+            class="h-10 inline-flex items-center rounded-xl border bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-100">
+            Ultimi 12 mesi
+          </button>
+          <button id="btnAll" type="button"
+            class="h-10 inline-flex items-center rounded-xl border bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-100">
+            Tutti
+          </button>
+          <button id="btnResetFilters" type="button"
+            class="h-10 inline-flex items-center rounded-xl border bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-100">
+            Ripristina
+          </button>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button id="btnRefresh" type="button"
+            class="h-10 inline-flex items-center justify-center rounded-xl border bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-100">
+            Aggiorna
+          </button>
+
+          <div id="loadingBadge"
+            class="hidden inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-sm text-slate-700">
+            <span class="h-2 w-2 rounded-full bg-slate-500 animate-pulse"></span>
+            Caricamento…
+          </div>
+        </div>
+      </div>
+
+      <!--
+        Riquadri statistici sintetici.
+        Mostrano il numero di operazioni aperte, completate e il totale
+        delle operazioni nel periodo selezionato.
+      -->
+      <div class="mt-5 grid grid-cols-3 gap-2 sm:w-[560px]">
+        <div class="rounded-xl border bg-slate-50 px-4 py-3">
+          <div class="text-xs text-slate-500">Posizioni in sospeso</div>
+          <div id="statOpen" class="mt-1 text-lg font-semibold">—</div>
+        </div>
+        <div class="rounded-xl border bg-slate-50 px-4 py-3">
+          <div class="text-xs text-slate-500">Completati</div>
+          <div id="statSucceeded" class="mt-1 text-lg font-semibold">—</div>
+        </div>
+        <div class="rounded-xl border bg-slate-50 px-4 py-3">
+          <div class="text-xs text-slate-500">Totali nel periodo</div>
+          <div id="statTotal" class="mt-1 text-lg font-semibold">—</div>
+        </div>
+      </div>
+    </section>
+
+    <!--
+      Sezione dedicata al pagamento in-app.
+      Permette, nei limiti della delega selezionata, di scegliere una
+      prestazione associata all’assistito e avviare un pagamento digitale.
+    -->
+    <section class="mt-6 rounded-2xl border bg-white p-6 sm:p-8 shadow-sm">
+      <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
+        <div class="flex-1">
+          <h2 class="text-lg font-semibold">Pagamento in-app</h2>
+          <p class="mt-1 text-sm text-slate-600">
+            Se disponibile per la delega selezionata, è possibile completare un pagamento in modo rapido.
+          </p>
+
+          <!--
+            Selettore della prestazione pagabile e azione di avvio pagamento.
+            Il popolamento delle opzioni e l’abilitazione del pulsante sono
+            gestiti dinamicamente lato client.
+          -->
+          <div class="mt-5 grid gap-3 sm:grid-cols-12">
+            <div class="sm:col-span-8">
+              <label class="text-sm font-medium text-slate-700" for="appointmentSelect">Prestazione</label>
+              <select id="appointmentSelect"
+                class="mt-2 h-11 w-full rounded-xl border bg-white px-4 text-sm focus:outline-none focus:ring-4 focus:ring-blue-100">
+                <option value="">Selezioni un assistito…</option>
+              </select>
+            </div>
+
+            <div class="sm:col-span-4 flex items-end">
+              <button id="btnPayNow" type="button"
+                class="h-11 w-full inline-flex items-center justify-center rounded-xl bg-blue-600 px-4 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled>
+                Paga ora
+              </button>
+            </div>
+          </div>
+
+          <!-- Riepilogo dinamico della prestazione selezionata per il pagamento -->
+          <div id="paySummary" class="mt-4 rounded-2xl border bg-slate-50 p-5 text-sm text-slate-700 leading-relaxed">
+            Selezioni un assistito e una prestazione per visualizzare il riepilogo.
+          </div>
+        </div>
+
+        <!--
+          Riquadro informativo laterale.
+          Fornisce note di contesto sul flusso di pagamento e sui limiti
+          imposti dalla delega selezionata.
+        -->
+        <aside class="w-full lg:w-[380px] rounded-2xl border bg-slate-50 p-5">
+          <div class="text-xs font-medium text-slate-500">Nota</div>
+          <div class="mt-2 text-sm text-slate-700 leading-relaxed">
+            Dopo la conferma, lo stato dell’operazione sarà aggiornato nello storico.
+          </div>
+
+          <div id="payPermissionsBox"
+            class="mt-4 rounded-xl border bg-white px-4 py-3 text-xs text-slate-600 leading-relaxed">
+            Le operazioni disponibili dipendono dalla delega selezionata.
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <!--
+      Sezione dello storico pagamenti.
+      Contiene empty state dedicato e tabella delle operazioni registrate
+      nel periodo selezionato.
+    -->
+    <section class="mt-6 rounded-2xl border bg-white p-6 sm:p-8 shadow-sm">
+      <div class="flex items-start justify-between gap-4">
+        <div>
+          <h2 class="text-lg font-semibold">Storico</h2>
+          <p class="mt-1 text-sm text-slate-600">
+            Consultazione delle operazioni registrate nel periodo selezionato.
+          </p>
+        </div>
+      </div>
+
+      <!--
+        Stato vuoto mostrato quando non risultano operazioni per i filtri
+        selezionati oppure per il periodo richiesto.
+      -->
+      <div id="emptyState" class="hidden mt-6 rounded-2xl border bg-slate-50 p-6">
+        <div class="text-sm font-medium text-slate-800">Nessuna operazione trovata</div>
+        <div class="mt-1 text-sm text-slate-600">
+          Provi a modificare l’intervallo di date o i criteri di ricerca.
+        </div>
+        <div class="mt-4 flex flex-wrap gap-2">
+          <button id="btnEmptyReset" type="button"
+            class="h-10 inline-flex items-center rounded-xl border bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-100">
+            Ripristina filtri
+          </button>
+          <a id="emptyAppointmentsLink" href="./appointments.html"
+            class="h-10 inline-flex items-center rounded-xl border bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-100">
+            Vai agli appuntamenti
+          </a>
+        </div>
+      </div>
+
+      <!--
+        Tabella delle operazioni di pagamento.
+        Il corpo tabellare viene popolato dinamicamente lato client con
+        le informazioni relative a importi, stati, riferimenti e azioni.
+      -->
+      <div class="mt-6 overflow-x-auto">
+        <table class="min-w-full text-sm">
+          <thead>
+            <tr class="text-left text-xs text-slate-500 border-b">
+              <th class="py-3 pr-4 font-medium">Data</th>
+              <th class="py-3 pr-4 font-medium">Prestazione</th>
+              <th class="py-3 pr-4 font-medium">Importo</th>
+              <th class="py-3 pr-4 font-medium">Stato</th>
+              <th class="py-3 pr-4 font-medium">Riferimento</th>
+              <th class="py-3 text-right font-medium">Azioni</th>
+            </tr>
+          </thead>
+          <tbody id="intentsTbody" class="divide-y">
+            <tr>
+              <td colspan="6" class="py-6 text-center text-slate-600">Selezioni un assistito per iniziare.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Contenitore per errori globali della pagina mostrati lato client -->
+    <div id="pageError" class="hidden mt-6 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700"
+      role="alert" aria-live="polite"></div>
+  </main>
+
+  <!-- Placeholder dei componenti condivisi renderizzati dinamicamente lato client -->
+  <div data-component="footer"></div>
+  <div data-component="modal"></div>
+</body>
+
+</html>

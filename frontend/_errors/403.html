@@ -1,0 +1,76 @@
+<!--
+  File: frontend/_errors/403.html
+
+  Scopo
+  -----
+  Presentare una pagina di errore dedicata ai casi in cui l’utente raggiunge
+  un’area del portale per la quale non possiede autorizzazioni sufficienti.
+
+  Ruolo nel sistema
+  -----------------
+  Questa pagina comunica in modo chiaro il fallimento del controllo di accesso
+  a una risorsa protetta e offre all’utente un percorso di uscita semplice,
+  riportandolo alla home oppure al flusso di autenticazione.
+
+  Note
+  ----
+  Il file è statico e ha una finalità puramente informativa: non contiene logica
+  applicativa, ma fornisce un feedback coerente con la gestione degli errori
+  di autorizzazione del front-end.
+-->
+
+<!doctype html>
+<html lang="it">
+
+<head>
+  <!-- Metadati di base del documento HTML -->
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Titolo mostrato nella scheda del browser -->
+  <title>Accesso non consentito | Healthcare Portal</title>
+
+  <!-- Foglio di stile condiviso del progetto -->
+  <link rel="stylesheet" href="/css/styles.css" />
+
+  <!-- Tailwind CSS caricato via CDN per la costruzione dell’interfaccia -->
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="min-h-screen bg-slate-50 text-slate-900">
+  <!--
+    Contenuto principale della pagina di errore.
+    Mostra il messaggio di accesso negato e propone due azioni:
+    ritorno alla home oppure nuovo accesso con credenziali differenti.
+  -->
+  <main class="mx-auto max-w-3xl px-4 py-12">
+    <div class="rounded-2xl border bg-white p-8 shadow-sm">
+      <!-- Etichetta visiva che evidenzia immediatamente la natura del problema -->
+      <div class="inline-flex items-center gap-2 rounded-full bg-red-50 px-3 py-1 text-sm text-red-700">
+        <span class="h-2 w-2 rounded-full bg-red-600"></span>
+        Accesso non consentito
+      </div>
+
+      <!-- Messaggio principale rivolto all’utente -->
+      <h1 class="mt-4 text-2xl sm:text-3xl font-semibold tracking-tight">Non hai i permessi necessari</h1>
+      <p class="mt-2 text-slate-600 leading-relaxed">
+        L’area richiesta non è disponibile per il tuo profilo. Se ritieni che si tratti di un errore,
+        effettua l’accesso con un account autorizzato o contatta l’amministrazione della struttura.
+      </p>
+
+      <!-- Azioni di recupero disponibili dopo il diniego di accesso -->
+      <div class="mt-6 flex flex-col sm:flex-row gap-3">
+        <a class="h-11 inline-flex items-center justify-center rounded-xl bg-blue-600 px-5 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-100"
+          href="/index.html">
+          Torna alla home
+        </a>
+        <a class="h-11 inline-flex items-center justify-center rounded-xl border px-5 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-100"
+          href="/pages/auth/login.html">
+          Accedi con un altro account
+        </a>
+      </div>
+    </div>
+  </main>
+</body>
+
+</html>

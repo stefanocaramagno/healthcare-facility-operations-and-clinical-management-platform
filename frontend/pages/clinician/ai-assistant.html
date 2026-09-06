@@ -1,0 +1,289 @@
+<!--
+  File: frontend/pages/clinician/ai-assistant.html
+
+  Scopo
+  -----
+  Definire la pagina clinica dedicata all’assistente AI consultivo, consentendo
+  al professionista sanitario di avviare conversazioni, fornire contesto clinico
+  anonimizzato, allegare documenti testuali di supporto e consultare la cronologia
+  dei messaggi generati durante la sessione.
+
+  Ruolo nel sistema
+  -----------------
+  Questa pagina appartiene all’area Clinician del portale e rappresenta la vista
+  operativa dedicata al supporto consultivo dell’assistente AI. Consente al clinico
+  di formulare domande su protocolli, procedure e documentazione testuale, mantenendo
+  un perimetro d’uso non identificativo e coerente con i vincoli di sicurezza dei dati.
+
+  Note
+  ----
+  Il file contiene il markup strutturale della pagina e i placeholder DOM
+  utilizzati dal relativo script JavaScript. La logica di autenticazione,
+  gestione della conversazione, invio dei prompt, caricamento ed esportazione
+  della chat, gestione degli allegati e aggiornamento dinamico dell’interfaccia
+  è demandata ai moduli caricati in `../../js/common/` e in
+  `../../js/clinician/ai-assistant.js`.
+-->
+
+<!doctype html>
+<html lang="it">
+
+<head>
+  <!-- Metadati di base del documento HTML -->
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Titolo mostrato nella scheda del browser -->
+  <title>Assistente AI | Healthcare Portal</title>
+
+  <!-- Risorse statiche condivise della pagina -->
+  <link rel="icon" href="../../assets/favicon.ico" />
+  <link rel="stylesheet" href="../../css/styles.css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!--
+    Script condivisi e specifici della pagina.
+    Vengono caricati con `defer` per eseguire la logica applicativa
+    dopo il parsing completo del documento HTML.
+  -->
+  <script defer src="../../js/common/utils.js"></script>
+  <script defer src="../../js/common/session.js"></script>
+  <script defer src="../../js/common/auth.js"></script>
+  <script defer src="../../js/common/ui-components.js"></script>
+  <script defer src="../../js/clinician/ai-assistant.js"></script>
+</head>
+
+<body class="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
+  <!-- Placeholder del componente navbar condiviso, sostituito dinamicamente lato client -->
+  <div data-component="navbar"></div>
+
+  <!--
+    Contenuto principale della pagina Assistente AI.
+    Comprende l’intestazione della vista, l’area conversazionale, il compositore
+    del messaggio, il pannello di contesto clinico, la gestione allegati e
+    l’eventuale messaggio di errore globale.
+  -->
+  <main class="mx-auto w-full max-w-7xl px-4 py-8 flex-1">
+    <!--
+      Sezione introduttiva della pagina.
+      Presenta il contesto d’uso dell’assistente AI e mette a disposizione le
+      azioni principali di gestione della conversazione.
+    -->
+    <section class="rounded-2xl border bg-white p-6 sm:p-8 shadow-sm">
+      <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
+        <div class="flex-1">
+          <div class="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-sm text-blue-700">
+            <span class="h-2 w-2 rounded-full bg-blue-600"></span>
+            Supporto consultivo
+          </div>
+
+          <h1 class="mt-4 text-2xl sm:text-3xl font-semibold tracking-tight">Assistente AI</h1>
+
+          <p class="mt-2 text-slate-600 leading-relaxed">
+            Strumento consultivo per chiarimenti su protocolli, procedure e interpretazione di documentazione testuale.
+            Per motivi di sicurezza, eviti riferimenti identificativi diretti del paziente.
+          </p>
+        </div>
+
+        <!-- Azioni rapide di gestione della conversazione e stato di elaborazione -->
+        <div class="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
+          <button id="btnNewConversation" type="button"
+            class="h-10 inline-flex items-center justify-center rounded-xl border bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-100">
+            Nuova conversazione
+          </button>
+
+          <button id="btnExport" type="button"
+            class="h-10 inline-flex items-center justify-center rounded-xl border bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-100">
+            Esporta
+          </button>
+
+          <div id="loadingBadge"
+            class="hidden inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-sm text-slate-700">
+            <span class="h-2 w-2 rounded-full bg-slate-500 animate-pulse"></span>
+            Elaborazione…
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!--
+      Layout principale della pagina.
+      La colonna sinistra contiene la chat e il compositore, mentre la colonna
+      destra raccoglie il contesto clinico, gli allegati e gli errori di pagina.
+    -->
+    <section class="mt-6 grid gap-6 lg:grid-cols-12">
+      <!--
+        Colonna principale della conversazione.
+        Comprende intestazione della chat, storico messaggi e area di composizione.
+      -->
+      <div class="lg:col-span-8 rounded-2xl border bg-white shadow-sm overflow-hidden flex flex-col min-h-[640px]">
+        <!--
+          Header della conversazione.
+          Mostra informazioni sintetiche sulla chat corrente e un controllo per
+          includere o meno la cronologia nel contesto della risposta.
+        -->
+        <div class="border-b bg-slate-50 px-5 py-4">
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <div class="text-sm font-semibold text-slate-900">Conversazione</div>
+              <div id="chatSubtitle" class="mt-1 text-xs text-slate-600">—</div>
+            </div>
+
+            <div class="flex flex-col items-end gap-1">
+              <label class="inline-flex items-center gap-2 text-xs text-slate-700 select-none">
+                <input id="toggleHistory" type="checkbox" class="h-4 w-4 rounded border-slate-300" checked />
+                Includi conversazione
+              </label>
+              <div class="text-[11px] text-slate-500 text-right leading-snug max-w-[280px]">
+                Se attivo, l’assistente considera anche gli ultimi messaggi per mantenere continuità nella risposta.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!--
+          Area scrollabile della chat.
+          Mostra uno stato vuoto iniziale oppure la lista dei messaggi della conversazione.
+        -->
+        <div id="chatScroll" class="flex-1 overflow-y-auto px-5 py-4 bg-white">
+          <div id="chatEmpty" class="rounded-2xl border bg-slate-50 p-5 text-sm text-slate-600 leading-relaxed">
+            Inizi una conversazione inserendo una domanda. Può aggiungere un contesto clinico e allegare documenti.
+          </div>
+
+          <div id="chatList" class="hidden space-y-3"></div>
+        </div>
+
+        <!--
+          Area di composizione del messaggio.
+          Consente l’inserimento della domanda, la selezione degli allegati e
+          il controllo del flusso di invio/interruzione.
+        -->
+        <div class="border-t bg-white px-5 py-4">
+          <div id="chatForm" class="space-y-3">
+            <div class="flex items-start gap-3">
+              <div class="flex-1">
+                <label class="sr-only" for="questionInput">Domanda</label>
+                <textarea id="questionInput" rows="3" placeholder="Scriva qui la domanda…"
+                  class="w-full rounded-2xl border px-4 py-3 text-sm focus:outline-none focus:ring-4 focus:ring-blue-100"></textarea>
+
+                <!--
+                  Riga accessoria del compositore.
+                  Permette di aprire il selettore file e mostra gli allegati già selezionati inline.
+                -->
+                <div class="mt-2 flex flex-wrap items-center gap-2">
+                  <label id="btnAttach" for="fileInput"
+                    class="h-9 inline-flex items-center rounded-xl border bg-white px-3 text-xs font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-100 cursor-pointer select-none">
+                    Aggiungi allegati
+                  </label>
+
+                  <div id="attachmentsInline" class="flex flex-wrap gap-2"></div>
+
+                  <input id="fileInput" type="file" class="hidden" multiple
+                    accept=".pdf,.docx,.txt,.md,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,text/markdown" />
+                </div>
+              </div>
+
+              <!-- Pulsanti primari di invio e interruzione -->
+              <div class="flex flex-col gap-2 w-[140px]">
+                <button id="btnSend" type="button"
+                  class="h-11 inline-flex items-center justify-center rounded-xl bg-blue-600 px-4 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-100">
+                  Invia
+                </button>
+
+                <button id="btnStop" type="button"
+                  class="h-11 inline-flex items-center justify-center rounded-xl border px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-100"
+                  disabled>
+                  Interrompi
+                </button>
+              </div>
+            </div>
+
+            <!-- Suggerimenti di utilizzo e hint dinamico del compositore -->
+            <div class="flex items-center justify-between gap-3">
+              <div class="text-xs text-slate-600 leading-relaxed">
+                Suggerimento: descriva il caso in forma anonima, focalizzandosi su segni, sintomi e obiettivi clinici.
+                <span class="ml-2 text-slate-500">(Invio rapido: Ctrl + Invio)</span>
+              </div>
+              <div id="composerHint" class="text-xs text-slate-500">—</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!--
+        Colonna laterale di supporto.
+        Contiene il contesto clinico opzionale, la lista completa degli allegati
+        selezionati e l’eventuale contenitore degli errori di pagina.
+      -->
+      <aside class="lg:col-span-4 space-y-6">
+        <!--
+          Sezione contesto clinico.
+          Permette al clinico di fornire informazioni aggiuntive utili a
+          inquadrare la domanda senza includere dati identificativi diretti.
+        -->
+        <div class="rounded-2xl border bg-white p-6 shadow-sm">
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <div class="text-sm font-semibold text-slate-900">Contesto clinico</div>
+              <div class="mt-1 text-xs text-slate-600">
+                Informazioni utili per inquadrare la domanda (opzionale).
+              </div>
+            </div>
+            <button id="btnClearContext" type="button"
+              class="h-9 inline-flex items-center rounded-xl border bg-white px-3 text-xs font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-100">
+              Svuota
+            </button>
+          </div>
+
+          <label class="sr-only" for="contextInput">Contesto</label>
+          <textarea id="contextInput" rows="9"
+            placeholder="Esempio: quadro clinico, parametri in forma anonima, obiettivo della valutazione, vincoli e criteri…"
+            class="mt-4 w-full rounded-2xl border px-4 py-3 text-sm focus:outline-none focus:ring-4 focus:ring-blue-100"></textarea>
+
+          <div class="mt-3 rounded-2xl border bg-slate-50 p-4 text-xs text-slate-600 leading-relaxed">
+            Eviti: nome, email, numero di telefono, codice fiscale o altri identificativi diretti.
+          </div>
+        </div>
+
+        <!--
+          Sezione allegati.
+          Mostra i documenti selezionati a supporto della richiesta e consente
+          la rimozione dell’intero set allegato.
+        -->
+        <div class="rounded-2xl border bg-white p-6 shadow-sm">
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <div class="text-sm font-semibold text-slate-900">Allegati</div>
+              <div class="mt-1 text-xs text-slate-600">Documenti testuali a supporto della richiesta.</div>
+            </div>
+
+            <button id="btnClearAttachments" type="button"
+              class="h-9 inline-flex items-center rounded-xl border bg-white px-3 text-xs font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-100">
+              Rimuovi
+            </button>
+          </div>
+
+          <div id="attachmentsList" class="mt-4 space-y-2">
+            <div class="rounded-2xl border bg-slate-50 p-4 text-sm text-slate-600">
+              Nessun allegato selezionato.
+            </div>
+          </div>
+
+          <div class="mt-3 text-xs text-slate-600 leading-relaxed">
+            Formati supportati: PDF, DOCX, TXT, MD.
+          </div>
+        </div>
+
+        <!-- Contenitore per errori globali della pagina mostrati lato client -->
+        <div id="pageError" class="hidden rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700"
+          role="alert" aria-live="polite"></div>
+      </aside>
+    </section>
+  </main>
+
+  <!-- Placeholder dei componenti condivisi renderizzati dinamicamente lato client -->
+  <div data-component="footer"></div>
+  <div data-component="modal"></div>
+</body>
+
+</html>

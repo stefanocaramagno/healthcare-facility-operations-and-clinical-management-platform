@@ -1,0 +1,25 @@
+/*
+  File: frontend/css/styles.css
+
+  Scopo
+  -----
+  Definire regole di stile condivise del front-end che integrano o rifiniscono
+  il comportamento visivo rispetto alle utility class utilizzate nel markup HTML.
+
+  Ruolo nel sistema
+  -----------------
+  Questo file rappresenta il punto di estensione CSS personalizzato del progetto,
+  utile per centralizzare eventuali regole non espresse direttamente tramite
+  Tailwind CSS o per normalizzare la resa di specifici elementi HTML.
+
+  Note
+  ----
+  Allo stato attuale il file contiene una personalizzazione minima relativa agli
+  elementi `<code>`, così da garantire una resa tipografica coerente per eventuali
+  frammenti di codice mostrati nell’interfaccia.
+*/
+
+code {
+  /* Applica una stack monospaziata leggibile e ampiamente compatibile tra sistemi operativi. */
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}

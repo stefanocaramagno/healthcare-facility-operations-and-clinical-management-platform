@@ -1,0 +1,107 @@
+<!--
+  File: frontend/_errors/session-expired.html
+
+  Scopo
+  -----
+  Presentare una pagina di errore dedicata ai casi in cui la sessione utente
+  non è più valida e l’utente deve autenticarsi nuovamente per proseguire.
+
+  Ruolo nel sistema
+  -----------------
+  Questa pagina informa l’utente della scadenza della sessione, preserva una
+  user experience coerente con il resto del portale e ricostruisce il link
+  verso il login includendo, quando presenti, i parametri utili al reindirizzamento
+  successivo e al contesto di ruolo.
+
+  Note
+  ----
+  Il file è prevalentemente statico, ma include un piccolo script inline che
+  legge i parametri della query string e aggiorna dinamicamente il collegamento
+  al login per mantenere il redirect desiderato dopo la nuova autenticazione.
+-->
+
+<!doctype html>
+<html lang="it">
+
+<head>
+  <!-- Metadati di base del documento HTML -->
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Titolo mostrato nella scheda del browser -->
+  <title>Sessione scaduta | Healthcare Portal</title>
+
+  <!-- Risorse statiche condivise -->
+  <link rel="stylesheet" href="/css/styles.css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="min-h-screen bg-slate-50 text-slate-900">
+  <!--
+    Contenuto principale della pagina.
+    Comunica la scadenza della sessione e propone due azioni:
+    ritorno al login oppure ritorno alla home pubblica.
+  -->
+  <main class="mx-auto max-w-3xl px-4 py-12">
+    <div class="rounded-2xl border bg-white p-8 shadow-sm">
+      <!-- Etichetta visiva che segnala immediatamente la natura dell’evento -->
+      <div class="inline-flex items-center gap-2 rounded-full bg-amber-50 px-3 py-1 text-sm text-amber-800">
+        <span class="h-2 w-2 rounded-full bg-amber-500"></span>
+        Sessione scaduta
+      </div>
+
+      <!-- Messaggio principale rivolto all’utente -->
+      <h1 class="mt-4 text-2xl sm:text-3xl font-semibold tracking-tight">Effettua nuovamente l’accesso</h1>
+      <p class="mt-2 text-slate-600 leading-relaxed">
+        Per motivi di sicurezza la sessione è terminata. Accedi di nuovo per continuare.
+      </p>
+
+      <!-- Azioni di recupero disponibili dopo la scadenza della sessione -->
+      <div class="mt-6 flex flex-col sm:flex-row gap-3">
+        <a id="loginLink"
+          class="h-11 inline-flex items-center justify-center rounded-xl bg-blue-600 px-5 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-100"
+          href="/pages/auth/login.html">
+          Vai al login
+        </a>
+        <a class="h-11 inline-flex items-center justify-center rounded-xl border px-5 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-100"
+          href="/index.html">
+          Torna alla home
+        </a>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    // Blocco di inizializzazione immediata che ricostruisce il link di login
+    // mantenendo, quando disponibili, i parametri di redirect e ruolo.
+    (function () {
+      // Legge i parametri presenti nella query string della pagina corrente.
+      const q = new URLSearchParams(window.location.search);
+
+      // Recupera la destinazione finale desiderata dopo il login; in assenza di valore
+      // esplicito utilizza come fallback la home pubblica.
+      const redirect = q.get("redirect") || "/index.html";
+
+      // Recupera l’eventuale ruolo usato per contestualizzare la pagina di login.
+      const role = q.get("role") || "";
+
+      // Ottiene il riferimento al link che porta al login.
+      const link = document.getElementById("loginLink");
+
+      // Costruisce programmaticamente l’URL assoluto della pagina di login.
+      const u = new URL("/pages/auth/login.html", window.location.origin);
+
+      // Propaga il parametro di redirect così da poter riprendere il flusso corretto
+      // dopo la nuova autenticazione.
+      u.searchParams.set("redirect", redirect);
+
+      // Propaga il ruolo soltanto se presente nella query corrente.
+      if (role) u.searchParams.set("role", role);
+
+      // Aggiorna il link visibile nella pagina con l’URL finale costruito.
+      link.href = u.toString();
+    })();
+  </script>
+</body>
+
+</html>

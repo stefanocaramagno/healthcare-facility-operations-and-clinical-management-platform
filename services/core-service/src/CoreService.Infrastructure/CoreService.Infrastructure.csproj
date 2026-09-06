@@ -1,0 +1,91 @@
+<!--
+  File: services/core-service/src/CoreService.Infrastructure/CoreService.Infrastructure.csproj
+
+  Scopo:
+  Definire il progetto .NET del layer Infrastructure del Core Service,
+  specificando SDK utilizzato, target framework, impostazioni di compilazione,
+  dipendenze NuGet necessarie alla persistenza e alle integrazioni
+  infrastrutturali, nonché i riferimenti ai progetti interni da cui dipende.
+
+  Ruolo nel sistema:
+  Questo file configura il progetto `CoreService.Infrastructure`, cioè il layer
+  che implementa i dettagli tecnici concreti del sistema, come accesso ai dati,
+  database context, repository, bootstrap infrastrutturale e integrazione con
+  MySQL ed Entity Framework Core. Il progetto collega i contratti applicativi
+  ai meccanismi reali di persistenza e hosting.
+
+  Note:
+  Il progetto utilizza `Microsoft.NET.Sdk` ed è configurato come libreria
+  infrastrutturale. Le dipendenze incluse supportano MySQL, Entity Framework
+  Core e strumenti di design-time per le attività di sviluppo, mentre i
+  riferimenti ai progetti Application e Domain consentono di implementare
+  concretamente le astrazioni applicative usando i modelli di dominio condivisi.
+-->
+
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Proprietà generali del progetto.
+    Definiscono framework di destinazione e principali impostazioni
+    di compilazione e qualità del codice.
+  -->
+  <PropertyGroup>
+    <!-- Target framework .NET utilizzato dal progetto Infrastructure. -->
+    <TargetFramework>net8.0</TargetFramework>
+
+    <!-- Abilita il controllo di nullabilità a compile-time. -->
+    <Nullable>enable</Nullable>
+
+    <!-- Abilita gli implicit using standard del framework. -->
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <!--
+    Dipendenze NuGet esterne del layer Infrastructure.
+    Supportano connettività al database, persistenza con Entity Framework Core
+    e componenti infrastrutturali necessari a runtime e design-time.
+  -->
+  <ItemGroup>
+    <!-- Driver ADO.NET per la connessione a database MySQL. -->
+    <PackageReference Include="MySqlConnector" Version="2.4.0" />
+
+    <!-- Libreria base di Entity Framework Core. -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.11" />
+
+    <!-- Componenti relazionali di Entity Framework Core per database SQL. -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="8.0.11" />
+
+    <!-- Provider EF Core per MySQL basato su Pomelo. -->
+    <PackageReference Include="Pomelo.EntityFrameworkCore.MySql" Version="8.0.2" />
+
+    <!-- Astrazioni hosting usate dai componenti infrastrutturali. -->
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="8.0.0" />
+
+    <!--
+      Dipendenza design-time di Entity Framework Core.
+      Viene mantenuta fuori dagli asset runtime del progetto finale
+      e serve per tooling, migrazioni e attività di sviluppo.
+    -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.11">
+      <!-- Rende la dipendenza disponibile solo internamente al progetto. -->
+      <PrivateAssets>all</PrivateAssets>
+
+      <!-- Limita gli asset inclusi ai soli ambiti necessari al tooling. -->
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <!--
+    Riferimenti ai progetti interni della solution.
+    Collegano il layer Infrastructure ai contratti applicativi
+    e ai modelli di dominio condivisi.
+  -->
+  <ItemGroup>
+    <!-- Accesso ai servizi applicativi, alle interfacce e ai contratti da implementare. -->
+    <ProjectReference Include="..\CoreService.Application\CoreService.Application.csproj" />
+
+    <!-- Accesso a entità, enum, value object e logica di dominio. -->
+    <ProjectReference Include="..\CoreService.Domain\CoreService.Domain.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,330 @@
+<!--
+  File: frontend/pages/patient/payments.html
+
+  Scopo
+  -----
+  Definire la pagina dell’area Patient dedicata alla gestione dei
+  pagamenti in-app e alla consultazione dello storico delle operazioni
+  economiche associate alle prestazioni sanitarie del paziente.
+
+  Ruolo nel sistema
+  -----------------
+  Questa pagina appartiene all’area Patient del portale e rappresenta la
+  vista attraverso cui il paziente può selezionare una prestazione
+  pagabile, avviare il pagamento in-app e consultare l’elenco delle
+  operazioni registrate nel periodo selezionato. La pagina integra quindi
+  sia la funzione operativa di pagamento sia la funzione di consultazione
+  storica e amministrativa.
+
+  Note
+  ----
+  Il file contiene il markup strutturale della pagina e i placeholder DOM
+  utilizzati dal relativo script JavaScript. La logica di autenticazione,
+  caricamento delle prestazioni pagabili, costruzione del riepilogo di
+  pagamento, esecuzione delle operazioni in-app, applicazione dei filtri,
+  rendering dello storico, aggiornamento delle statistiche e trattamento
+  degli errori è demandata ai moduli caricati in `../../js/common/` e in
+  `../../js/patient/payments.js`.
+-->
+
+<!doctype html>
+<html lang="it">
+
+<head>
+  <!-- Metadati di base del documento HTML -->
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Titolo mostrato nella scheda del browser -->
+  <title>Pagamenti | Healthcare Portal</title>
+
+  <!-- Risorse statiche condivise della pagina -->
+  <link rel="icon" href="../../assets/favicon.ico" />
+  <link rel="stylesheet" href="../../css/styles.css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!--
+    Script condivisi e specifici della pagina.
+    Vengono caricati con `defer` per eseguire la logica applicativa
+    dopo il parsing completo del documento HTML.
+  -->
+  <script defer src="../../js/common/utils.js"></script>
+  <script defer src="../../js/common/session.js"></script>
+  <script defer src="../../js/common/auth.js"></script>
+  <script defer src="../../js/common/ui-components.js"></script>
+  <script defer src="../../js/patient/payments.js"></script>
+</head>
+
+<body class="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
+  <!-- Placeholder del componente navbar condiviso, sostituito dinamicamente lato client -->
+  <div data-component="navbar"></div>
+
+  <!--
+    Contenuto principale della pagina pagamenti.
+    Comprende l’intestazione della vista, i filtri di consultazione,
+    gli indicatori sintetici, la sezione di pagamento in-app,
+    lo storico delle operazioni e il contenitore per eventuali errori globali.
+  -->
+  <main class="mx-auto w-full max-w-7xl px-4 py-8 flex-1">
+    <!--
+      Sezione introduttiva della pagina.
+      Presenta il contesto dell’area pagamenti e include i collegamenti
+      rapidi verso appuntamenti e dashboard del paziente.
+    -->
+    <section class="rounded-2xl border bg-white p-6 sm:p-8 shadow-sm">
+      <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
+        <div class="flex-1">
+          <div class="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-sm text-blue-700">
+            <span class="h-2 w-2 rounded-full bg-blue-600"></span>
+            Area pagamenti
+          </div>
+
+          <h1 class="mt-4 text-2xl sm:text-3xl font-semibold tracking-tight">Pagamenti</h1>
+
+          <p class="mt-2 text-slate-600 leading-relaxed">
+            Gestisca i pagamenti in-app e consulti lo storico delle operazioni associate alle Sue prestazioni.
+          </p>
+        </div>
+
+        <!-- Azioni rapide verso l’elenco appuntamenti e la dashboard -->
+        <div class="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
+          <a href="./appointments.html"
+            class="h-10 inline-flex items-center justify-center rounded-xl border bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-100">
+            Appuntamenti
+          </a>
+          <a href="./dashboard.html"
+            class="h-10 inline-flex items-center justify-center rounded-xl border bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-100">
+            Dashboard
+          </a>
+        </div>
+      </div>
+
+      <!--
+        Area dei filtri principali.
+        Consente di limitare le operazioni per intervallo temporale,
+        stato del pagamento e testo di ricerca.
+      -->
+      <div class="mt-6 grid gap-3 lg:grid-cols-12">
+        <div class="lg:col-span-3">
+          <label class="text-sm font-medium text-slate-700" for="fromDate">Da</label>
+          <input id="fromDate" type="date"
+            class="mt-2 h-11 w-full rounded-xl border px-4 text-sm focus:outline-none focus:ring-4 focus:ring-blue-100" />
+        </div>
+
+        <div class="lg:col-span-3">
+          <label class="text-sm font-medium text-slate-700" for="toDate">A</label>
+          <input id="toDate" type="date"
+            class="mt-2 h-11 w-full rounded-xl border px-4 text-sm focus:outline-none focus:ring-4 focus:ring-blue-100" />
+        </div>
+
+        <div class="lg:col-span-3">
+          <label class="text-sm font-medium text-slate-700" for="statusSelect">Stato</label>
+          <select id="statusSelect"
+            class="mt-2 h-11 w-full rounded-xl border bg-white px-4 text-sm focus:outline-none focus:ring-4 focus:ring-blue-100">
+            <option value="ALL">Tutti</option>
+            <option value="OPEN">In sospeso</option>
+            <option value="SUCCEEDED">Completati</option>
+            <option value="FAILED">Non riusciti</option>
+            <option value="CANCELED">Annullati</option>
+          </select>
+        </div>
+
+        <div class="lg:col-span-3">
+          <label class="text-sm font-medium text-slate-700" for="searchInput">Ricerca</label>
+          <input id="searchInput" type="search" autocomplete="off" placeholder="Prestazione, data, riferimento…"
+            class="mt-2 h-11 w-full rounded-xl border px-4 text-sm focus:outline-none focus:ring-4 focus:ring-blue-100" />
+        </div>
+      </div>
+
+      <!--
+        Barra delle azioni rapide sui filtri e sul caricamento dati.
+        Include preset temporali, reset dei criteri, refresh manuale
+        e indicatore di caricamento globale.
+      -->
+      <div class="mt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div class="flex flex-wrap gap-2">
+          <button id="btnLast90" type="button"
+            class="h-10 inline-flex items-center rounded-xl border bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-100">
+            Ultimi 3 mesi
+          </button>
+          <button id="btnLast365" type="button"
+            class="h-10 inline-flex items-center rounded-xl border bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-100">
+            Ultimi 12 mesi
+          </button>
+          <button id="btnAll" type="button"
+            class="h-10 inline-flex items-center rounded-xl border bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-100">
+            Tutti
+          </button>
+          <button id="btnResetFilters" type="button"
+            class="h-10 inline-flex items-center rounded-xl border bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-100">
+            Ripristina
+          </button>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button id="btnRefresh" type="button"
+            class="h-10 inline-flex items-center justify-center rounded-xl border bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-100">
+            Aggiorna
+          </button>
+
+          <div id="loadingBadge"
+            class="hidden inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-sm text-slate-700">
+            <span class="h-2 w-2 rounded-full bg-slate-500 animate-pulse"></span>
+            Caricamento…
+          </div>
+        </div>
+      </div>
+
+      <!--
+        Riquadri sintetici con indicatori aggregati sulle operazioni di pagamento.
+        Espongono posizioni in sospeso, operazioni completate
+        e totale delle operazioni nel periodo selezionato.
+      -->
+      <div class="mt-5 grid grid-cols-3 gap-2 sm:w-[560px]">
+        <div class="rounded-xl border bg-slate-50 px-4 py-3">
+          <div class="text-xs text-slate-500">Posizioni in sospeso</div>
+          <div id="statOpen" class="mt-1 text-lg font-semibold">—</div>
+        </div>
+        <div class="rounded-xl border bg-slate-50 px-4 py-3">
+          <div class="text-xs text-slate-500">Completati</div>
+          <div id="statSucceeded" class="mt-1 text-lg font-semibold">—</div>
+        </div>
+        <div class="rounded-xl border bg-slate-50 px-4 py-3">
+          <div class="text-xs text-slate-500">Totali nel periodo</div>
+          <div id="statTotal" class="mt-1 text-lg font-semibold">—</div>
+        </div>
+      </div>
+    </section>
+
+    <!--
+      Sezione dedicata al pagamento in-app.
+      Consente di selezionare una prestazione pagabile, visualizzarne
+      il riepilogo e avviare l’operazione di pagamento.
+    -->
+    <section class="mt-6 rounded-2xl border bg-white p-6 sm:p-8 shadow-sm">
+      <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
+        <div class="flex-1">
+          <h2 class="text-lg font-semibold">Pagamento in-app</h2>
+          <p class="mt-1 text-sm text-slate-600">
+            Selezioni una prestazione e proceda al pagamento in modo semplice e immediato.
+          </p>
+
+          <!--
+            Area operativa del pagamento.
+            Comprende la selezione della prestazione e l’azione principale
+            per avviare il pagamento in-app.
+          -->
+          <div class="mt-5 grid gap-3 sm:grid-cols-12">
+            <div class="sm:col-span-8">
+              <label class="text-sm font-medium text-slate-700" for="appointmentSelect">Prestazione</label>
+              <select id="appointmentSelect"
+                class="mt-2 h-11 w-full rounded-xl border bg-white px-4 text-sm focus:outline-none focus:ring-4 focus:ring-blue-100">
+                <option value="">Selezionare…</option>
+              </select>
+            </div>
+
+            <div class="sm:col-span-4 flex items-end">
+              <button id="btnPayNow" type="button"
+                class="h-11 w-full inline-flex items-center justify-center rounded-xl bg-blue-600 px-4 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-100">
+                Paga ora
+              </button>
+            </div>
+          </div>
+
+          <!-- Riquadro riepilogativo della prestazione selezionata per il pagamento -->
+          <div id="paySummary" class="mt-4 rounded-2xl border bg-slate-50 p-5 text-sm text-slate-700 leading-relaxed">
+            Selezioni una prestazione per visualizzare il riepilogo.
+          </div>
+        </div>
+
+        <!--
+          Colonna laterale informativa.
+          Fornisce indicazioni sintetiche sul comportamento dello storico
+          e sulla possibilità di pagamento alternativo in struttura.
+        -->
+        <aside class="w-full lg:w-[380px] rounded-2xl border bg-slate-50 p-5">
+          <div class="text-xs font-medium text-slate-500">Nota</div>
+          <div class="mt-2 text-sm text-slate-700 leading-relaxed">
+            Dopo la conferma, lo stato dell’operazione sarà aggiornato nello storico.
+          </div>
+
+          <div class="mt-4 rounded-xl border bg-white px-4 py-3 text-xs text-slate-600 leading-relaxed">
+            Per eventuali necessità amministrative, è possibile effettuare il pagamento anche in struttura.
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <!--
+      Sezione principale dello storico pagamenti.
+      Contiene lo stato vuoto e la tabella delle operazioni economiche
+      registrate per il paziente autenticato.
+    -->
+    <section class="mt-6 rounded-2xl border bg-white p-6 sm:p-8 shadow-sm">
+      <div class="flex items-start justify-between gap-4">
+        <div>
+          <h2 class="text-lg font-semibold">Storico</h2>
+          <p class="mt-1 text-sm text-slate-600">
+            Consultazione delle operazioni registrate nel periodo selezionato.
+          </p>
+        </div>
+      </div>
+
+      <!--
+        Stato vuoto mostrato quando nessuna operazione soddisfa i criteri correnti.
+        Offre sia il reset dei filtri sia un accesso rapido all’area appuntamenti.
+      -->
+      <div id="emptyState" class="hidden mt-6 rounded-2xl border bg-slate-50 p-6">
+        <div class="text-sm font-medium text-slate-800">Nessuna operazione trovata</div>
+        <div class="mt-1 text-sm text-slate-600">
+          Provi a modificare l’intervallo di date o i criteri di ricerca.
+        </div>
+        <div class="mt-4 flex flex-wrap gap-2">
+          <button id="btnEmptyReset" type="button"
+            class="h-10 inline-flex items-center rounded-xl border bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-100">
+            Ripristina filtri
+          </button>
+          <a href="./appointments.html"
+            class="h-10 inline-flex items-center rounded-xl border bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-100">
+            Vai agli appuntamenti
+          </a>
+        </div>
+      </div>
+
+      <!--
+        Tabella dello storico pagamenti.
+        Il corpo viene popolato dinamicamente lato client con le operazioni
+        disponibili e con le relative azioni operative.
+      -->
+      <div class="mt-6 overflow-x-auto">
+        <table class="min-w-full text-sm">
+          <thead>
+            <tr class="text-left text-xs text-slate-500 border-b">
+              <th class="py-3 pr-4 font-medium">Data</th>
+              <th class="py-3 pr-4 font-medium">Prestazione</th>
+              <th class="py-3 pr-4 font-medium">Importo</th>
+              <th class="py-3 pr-4 font-medium">Stato</th>
+              <th class="py-3 pr-4 font-medium">Riferimento</th>
+              <th class="py-3 text-right font-medium">Azioni</th>
+            </tr>
+          </thead>
+          <tbody id="intentsTbody" class="divide-y">
+            <tr>
+              <td colspan="6" class="py-6 text-center text-slate-600">Caricamento…</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Contenitore per errori globali della pagina mostrati lato client -->
+    <div id="pageError" class="hidden mt-6 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700"
+      role="alert" aria-live="polite"></div>
+  </main>
+
+  <!-- Placeholder dei componenti condivisi renderizzati dinamicamente lato client -->
+  <div data-component="footer"></div>
+  <div data-component="modal"></div>
+</body>
+
+</html>

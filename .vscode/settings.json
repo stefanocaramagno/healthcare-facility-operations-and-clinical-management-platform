@@ -1,0 +1,47 @@
+// File: .vscode/settings.json
+//
+// Scopo:
+// Definire le impostazioni locali di Visual Studio Code adottate nel progetto,
+// in modo da uniformare formattazione, gestione degli spazi, fine riga
+// e comportamento di specifici linguaggi durante le attività di sviluppo.
+//
+// Ruolo nel sistema:
+// Questo file configura l’ambiente editoriale del workspace, aiutando a
+// mantenere coerenza stilistica tra i file del progetto e a ridurre differenze
+// accidentali dovute a preferenze locali dell’IDE o del sistema operativo.
+//
+// Note:
+// - Le impostazioni privilegiano una formattazione uniforme e pulita del codice.
+// - Per SQL e MySQL il format automatico su salvataggio e incolla è disabilitato
+//   per evitare modifiche indesiderate agli script.
+// - È configurata anche una porta dedicata per Live Server in ambiente locale.
+{
+  // Abilita la formattazione automatica al salvataggio del file.
+  "editor.formatOnSave": true,
+  // Imposta l’ampiezza visiva della tabulazione a 2 spazi.
+  "editor.tabSize": 2,
+  // Forza l’uso di spazi al posto dei caratteri tab.
+  "editor.insertSpaces": true,
+  // Uniforma il terminatore di riga al formato LF.
+  "files.eol": "\n",
+  // Rimuove gli spazi finali inutili durante il salvataggio.
+  "files.trimTrailingWhitespace": true,
+  // Garantisce la presenza di una newline finale nel file.
+  "files.insertFinalNewline": true,
+  // Abilita la formattazione per i file C#.
+  "csharp.format.enable": true,
+  // Impostazioni specifiche per file SQL:
+  // disabilitano la formattazione automatica per preservare il layout manuale.
+  "[sql]": {
+    "editor.formatOnSave": false,
+    "editor.formatOnPaste": false
+  },
+  // Impostazioni specifiche per file MySQL:
+  // disabilitano la formattazione automatica per evitare alterazioni indesiderate.
+  "[mysql]": {
+    "editor.formatOnSave": false,
+    "editor.formatOnPaste": false
+  },
+  // Porta locale usata dall’estensione Live Server.
+  "liveServer.settings.port": 5501
+}

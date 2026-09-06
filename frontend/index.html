@@ -1,0 +1,386 @@
+<!--
+  File: frontend/index.html
+
+  Scopo
+  -----
+  Costituire la landing page pubblica della piattaforma, presentando in modo sintetico
+  il sistema, i profili supportati e i principali punti di accesso ai flussi di login
+  e registrazione.
+
+  Ruolo nel sistema
+  -----------------
+  Questa pagina rappresenta il punto di ingresso iniziale per utenti non autenticati.
+  Ha una funzione principalmente informativa e di instradamento verso le pagine
+  dedicate all’autenticazione, alla registrazione e al recupero password.
+
+  Note
+  ----
+  Il file è volutamente statico e leggero: non contiene logica applicativa complessa,
+  ma solo struttura di presentazione, collegamenti ai percorsi principali e un piccolo
+  script finale per valorizzare dinamicamente l’anno corrente nel footer.
+-->
+
+<!doctype html>
+<html lang="it">
+
+<head>
+  <!-- Metadati fondamentali del documento HTML -->
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- Titolo visualizzato nella scheda del browser -->
+  <title>Clinical Management Platform</title>
+
+  <!-- Descrizione sintetica della piattaforma -->
+  <meta name="description"
+    content="Piattaforma moderna per la gestione del percorso clinico, prenotazioni, referti e pagamenti." />
+
+  <!-- Tailwind CSS caricato via CDN per la costruzione dell'interfaccia -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Foglio di stile condiviso del front-end -->
+  <link rel="stylesheet" href="./css/styles.css" />
+</head>
+
+<body class="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
+  <!--
+    Header principale della landing page.
+    Contiene brand, navigazione interna alle sezioni informative e accesso rapido al login.
+  -->
+  <header class="sticky top-0 z-40 border-b border-slate-200 bg-white">
+    <div class="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
+      <!-- Logo e identità testuale della piattaforma -->
+      <a href="./index.html" class="flex items-center gap-3" aria-label="Go to home">
+        <span class="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-blue-600 text-white shadow-sm">
+          <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M12 3v18M3 12h18" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+          </svg>
+        </span>
+        <div class="leading-tight">
+          <p class="text-sm font-semibold tracking-tight">Clinical Management</p>
+          <p class="text-xs text-slate-500">Secure • Simple • Reliable</p>
+        </div>
+      </a>
+
+      <!-- Navigazione desktop verso le sezioni informative e la pagina di login -->
+      <nav class="hidden items-center gap-3 sm:flex">
+        <a href="#access" class="text-sm font-medium text-slate-600 hover:text-slate-900">Accesso</a>
+        <a href="#features" class="text-sm font-medium text-slate-600 hover:text-slate-900">Funzionalità</a>
+        <a href="#support" class="text-sm font-medium text-slate-600 hover:text-slate-900">Supporto</a>
+
+        <a href="./pages/auth/login.html"
+          class="ml-2 inline-flex items-center rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:ring-offset-2">
+          Accedi
+        </a>
+      </nav>
+
+      <!-- Pulsante di accesso dedicato alla visualizzazione mobile -->
+      <a href="./pages/auth/login.html"
+        class="inline-flex items-center rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:ring-offset-2 sm:hidden">
+        Accedi
+      </a>
+    </div>
+  </header>
+
+  <main class="flex-1">
+    <!--
+      Hero section iniziale.
+      Presenta la piattaforma, i suoi benefici e i principali inviti all’azione
+      per accesso e registrazione.
+    -->
+    <section class="border-b border-slate-200 bg-white">
+      <div class="mx-auto max-w-6xl px-4 pb-10 pt-10 sm:px-6 sm:pb-14 sm:pt-14">
+        <div class="grid items-center gap-10 lg:grid-cols-2">
+          <!-- Colonna informativa con messaggio introduttivo e call to action -->
+          <div>
+            <h1 class="mt-4 text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">
+              Gestione clinica e amministrativa in un’unica esperienza, semplice e moderna.
+            </h1>
+
+            <p class="mt-4 max-w-xl text-base leading-relaxed text-slate-600">
+              Accesso dedicato per operatori amministrativi, operatori sanitari, pazienti e delegati.
+              Prenotazioni, percorso clinico, referti, pagamenti e comunicazioni: tutto con un’interfaccia
+              minimal, professionale e ottimizzata anche per mobile.
+            </p>
+
+            <!-- Pulsanti principali per indirizzare l’utente al flusso corretto -->
+            <div class="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
+              <a href="#access"
+                class="inline-flex items-center justify-center rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:ring-offset-2">
+                Scegli il tuo accesso
+              </a>
+
+              <a href="./pages/auth/register-patient.html"
+                class="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-900 shadow-sm hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-300 focus:ring-offset-2">
+                Crea un account paziente
+              </a>
+            </div>
+
+            <!-- Sintesi dei tre pilastri comunicativi della piattaforma -->
+            <div class="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <div class="rounded-xl border border-slate-200 bg-white p-4">
+                <p class="text-xs font-semibold text-slate-500">Sicurezza</p>
+                <p class="mt-1 text-sm font-semibold">Accesso per ruoli</p>
+                <p class="mt-1 text-xs text-slate-600">Permessi e aree dedicate.</p>
+              </div>
+              <div class="rounded-xl border border-slate-200 bg-white p-4">
+                <p class="text-xs font-semibold text-slate-500">Operatività</p>
+                <p class="mt-1 text-sm font-semibold">Flussi end-to-end</p>
+                <p class="mt-1 text-xs text-slate-600">Dal booking al referto.</p>
+              </div>
+              <div class="rounded-xl border border-slate-200 bg-white p-4">
+                <p class="text-xs font-semibold text-slate-500">Comunicazioni</p>
+                <p class="mt-1 text-sm font-semibold">Notifiche</p>
+                <p class="mt-1 text-xs text-slate-600">Promemoria e messaggi.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Colonna laterale con accesso rapido per i diversi ruoli -->
+          <div class="relative">
+            <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+              <div class="flex items-start justify-between gap-4">
+                <div>
+                  <p class="text-sm font-semibold text-slate-900">Accesso rapido</p>
+                  <p class="mt-1 text-sm text-slate-600">Seleziona il profilo e procedi al login.</p>
+                </div>
+              </div>
+
+              <!-- Elenco dei profili disponibili con link contestualizzati alla pagina di login -->
+              <div class="mt-5 space-y-3">
+                <a href="./pages/auth/login.html?role=ADMIN"
+                  class="group flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3 hover:border-blue-200 hover:bg-blue-50">
+                  <div class="flex items-center gap-3">
+                    <span
+                      class="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-blue-600 text-white shadow-sm">
+                      <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Zm7 9a7 7 0 0 0-14 0" stroke="currentColor"
+                          stroke-width="2" stroke-linecap="round" />
+                      </svg>
+                    </span>
+                    <div>
+                      <p class="text-sm font-semibold text-slate-900">Operatore amministrativo</p>
+                      <p class="text-xs text-slate-600">Accettazione, pagamenti, notifiche.</p>
+                    </div>
+                  </div>
+                  <span class="text-sm font-semibold text-blue-700 group-hover:translate-x-0.5 transition">→</span>
+                </a>
+
+                <a href="./pages/auth/login.html?role=CLINICIAN"
+                  class="group flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3 hover:border-blue-200 hover:bg-blue-50">
+                  <div class="flex items-center gap-3">
+                    <span
+                      class="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-blue-600 text-white shadow-sm">
+                      <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <path d="M9 12h6M12 9v6M4 21V7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v14" stroke="currentColor"
+                          stroke-width="2" stroke-linecap="round" />
+                      </svg>
+                    </span>
+                    <div>
+                      <p class="text-sm font-semibold text-slate-900">Operatore sanitario</p>
+                      <p class="text-xs text-slate-600">Agenda, encounter, referti, AI.</p>
+                    </div>
+                  </div>
+                  <span class="text-sm font-semibold text-blue-700 group-hover:translate-x-0.5 transition">→</span>
+                </a>
+
+                <a href="./pages/auth/login.html?role=PATIENT"
+                  class="group flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3 hover:border-blue-200 hover:bg-blue-50">
+                  <div class="flex items-center gap-3">
+                    <span
+                      class="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-blue-600 text-white shadow-sm">
+                      <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Zm7 9a7 7 0 0 0-14 0" stroke="currentColor"
+                          stroke-width="2" stroke-linecap="round" />
+                      </svg>
+                    </span>
+                    <div>
+                      <p class="text-sm font-semibold text-slate-900">Paziente</p>
+                      <p class="text-xs text-slate-600">Prenotazioni, pagamenti, referti.</p>
+                    </div>
+                  </div>
+                  <span class="text-sm font-semibold text-blue-700 group-hover:translate-x-0.5 transition">→</span>
+                </a>
+
+                <a href="./pages/auth/login.html?role=DELEGATE"
+                  class="group flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3 hover:border-blue-200 hover:bg-blue-50">
+                  <div class="flex items-center gap-3">
+                    <span
+                      class="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-blue-600 text-white shadow-sm">
+                      <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <path d="M16 11a4 4 0 1 0-8 0v1a4 4 0 1 0 8 0v-1Z" stroke="currentColor" stroke-width="2"
+                          stroke-linecap="round" />
+                        <path d="M7 21a6 6 0 0 1 10 0" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                      </svg>
+                    </span>
+                    <div>
+                      <p class="text-sm font-semibold text-slate-900">Delegato</p>
+                      <p class="text-xs text-slate-600">Gestione assistito, pagamenti.</p>
+                    </div>
+                  </div>
+                  <span class="text-sm font-semibold text-blue-700 group-hover:translate-x-0.5 transition">→</span>
+                </a>
+              </div>
+
+              <!-- Sezione dedicata alla registrazione dei profili esterni -->
+              <div class="mt-6 rounded-xl border border-slate-200 bg-slate-50 p-4">
+                <p class="text-xs font-semibold text-slate-700">Non hai un account?</p>
+                <div class="mt-2 flex flex-col gap-2 sm:flex-row">
+                  <a href="./pages/auth/register-patient.html"
+                    class="inline-flex flex-1 items-center justify-center rounded-xl bg-white px-4 py-2 text-sm font-semibold text-slate-900 shadow-sm hover:bg-slate-50">
+                    Registrazione Paziente
+                  </a>
+                  <a href="./pages/auth/register-delegate.html"
+                    class="inline-flex flex-1 items-center justify-center rounded-xl bg-white px-4 py-2 text-sm font-semibold text-slate-900 shadow-sm hover:bg-slate-50">
+                    Registrazione Delegato
+                  </a>
+                </div>
+                <p class="mt-2 text-xs text-slate-600">
+                  Gli account operatore sono gestiti dall’organizzazione.
+                  <a class="font-semibold text-blue-700 hover:underline" href="#support">Supporto</a>
+                </p>
+              </div>
+
+              <!-- Link al flusso di recupero password -->
+              <div class="mt-4 text-right">
+                <a href="./pages/auth/forgot-password.html"
+                  class="text-sm font-semibold text-slate-700 hover:text-slate-900 hover:underline">
+                  Hai dimenticato la password?
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Sezione che riassume i principali punti di accesso per profilo -->
+    <section id="access" class="bg-white">
+      <div class="mx-auto max-w-6xl px-4 py-10 sm:px-6">
+        <h2 class="text-xl font-bold tracking-tight text-slate-900">Accesso per profilo</h2>
+        <p class="mt-2 max-w-2xl text-sm text-slate-600">
+          Seleziona il profilo per essere indirizzato al flusso di autenticazione corrispondente.
+          Il sistema applica automaticamente le autorizzazioni in base al ruolo.
+        </p>
+
+        <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <a href="./pages/auth/login.html?role=ADMIN"
+            class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm hover:border-blue-200 hover:bg-blue-50">
+            <p class="text-sm font-semibold text-slate-900">Admin</p>
+            <p class="mt-1 text-xs text-slate-600">Gestione accettazione e operatività.</p>
+          </a>
+          <a href="./pages/auth/login.html?role=CLINICIAN"
+            class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm hover:border-blue-200 hover:bg-blue-50">
+            <p class="text-sm font-semibold text-slate-900">Clinician</p>
+            <p class="mt-1 text-xs text-slate-600">Percorso clinico e refertazione.</p>
+          </a>
+          <a href="./pages/auth/login.html?role=PATIENT"
+            class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm hover:border-blue-200 hover:bg-blue-50">
+            <p class="text-sm font-semibold text-slate-900">Patient</p>
+            <p class="mt-1 text-xs text-slate-600">Prenotazioni, pagamenti, referti.</p>
+          </a>
+          <a href="./pages/auth/login.html?role=DELEGATE"
+            class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm hover:border-blue-200 hover:bg-blue-50">
+            <p class="text-sm font-semibold text-slate-900">Delegate</p>
+            <p class="mt-1 text-xs text-slate-600">Gestione per conto dell’assistito.</p>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Sezione descrittiva delle funzionalità di maggiore rilievo -->
+    <section id="features" class="bg-slate-50 border-t border-slate-200">
+      <div class="mx-auto max-w-6xl px-4 py-10 sm:px-6">
+        <h2 class="text-xl font-bold tracking-tight text-slate-900">Funzionalità principali</h2>
+        <p class="mt-2 max-w-2xl text-sm text-slate-600">
+          Un’esperienza uniforme, con flussi chiari e schermate focalizzate sull’operatività.
+        </p>
+
+        <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <p class="text-sm font-semibold text-slate-900">Prenotazioni e ripianificazioni</p>
+            <p class="mt-2 text-sm text-slate-600">Ricerca disponibilità, prenotazione, annullo e riprogrammazione.</p>
+          </div>
+          <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <p class="text-sm font-semibold text-slate-900">Percorso clinico</p>
+            <p class="mt-2 text-sm text-slate-600">Pre-triage, anamnesi, parametri, ordini, esecuzioni e referti.</p>
+          </div>
+          <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <p class="text-sm font-semibold text-slate-900">Pagamenti e riconciliazione</p>
+            <p class="mt-2 text-sm text-slate-600">Pagamenti in app e in sede, con gestione degli esiti.</p>
+          </div>
+          <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <p class="text-sm font-semibold text-slate-900">Comunicazioni e promemoria</p>
+            <p class="mt-2 text-sm text-slate-600">Notifiche mirate con tracciamento e gestione lettura.</p>
+          </div>
+          <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <p class="text-sm font-semibold text-slate-900">Deleghe e consensi</p>
+            <p class="mt-2 text-sm text-slate-600">Gestione delega e consensi secondo flussi operativi.</p>
+          </div>
+          <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <p class="text-sm font-semibold text-slate-900">Assistente AI consultivo</p>
+            <p class="mt-2 text-sm text-slate-600">Supporto informativo per operatori sanitari con vincoli privacy.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Sezione supporto per credenziali operatori e recupero password -->
+    <section id="support" class="bg-white border-t border-slate-200">
+      <div class="mx-auto max-w-6xl px-4 py-10 sm:px-6">
+        <h2 class="text-xl font-bold tracking-tight text-slate-900">Supporto</h2>
+        <p class="mt-2 max-w-2xl text-sm text-slate-600">
+          Per credenziali operatore o assistenza sull’accesso, contatta il supporto della struttura.
+        </p>
+
+        <div class="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-6">
+          <div class="grid gap-4 sm:grid-cols-2">
+            <div>
+              <p class="text-sm font-semibold text-slate-900">Accesso operatori</p>
+              <p class="mt-1 text-sm text-slate-600">
+                Gli account amministrativi e sanitari sono gestiti centralmente. Se non disponi di credenziali,
+                richiedile al referente interno.
+              </p>
+            </div>
+            <div>
+              <p class="text-sm font-semibold text-slate-900">Recupero password</p>
+              <p class="mt-1 text-sm text-slate-600">
+                Puoi avviare il recupero credenziali dalla pagina dedicata.
+              </p>
+              <div class="mt-3">
+                <a href="./pages/auth/forgot-password.html"
+                  class="inline-flex items-center rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:ring-offset-2">
+                  Recupera password
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer con collegamenti rapidi e anno corrente -->
+  <footer class="border-t border-slate-200 bg-white">
+    <div class="mx-auto max-w-6xl px-4 py-8 sm:px-6">
+      <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <p class="text-sm text-slate-600">
+          © <span id="year"></span> Clinical Management Platform
+        </p>
+        <div class="flex flex-wrap gap-4 text-sm font-semibold text-slate-700">
+          <a href="#features" class="hover:text-slate-900 hover:underline">Funzionalità</a>
+          <a href="#support" class="hover:text-slate-900 hover:underline">Supporto</a>
+          <a href="./pages/auth/login.html" class="hover:text-slate-900 hover:underline">Accedi</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // Aggiorna dinamicamente l’anno nel footer per evitare manutenzione manuale del valore.
+    document.getElementById("year").textContent = new Date().getFullYear();
+  </script>
+</body>
+
+</html>

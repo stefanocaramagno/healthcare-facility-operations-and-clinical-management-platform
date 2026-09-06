@@ -1,0 +1,496 @@
+<!--
+  File: frontend/pages/clinician/encounter-detail.html
+
+  Scopo
+  -----
+  Definire la pagina clinica dedicata alla consultazione e alla gestione
+  operativa del dettaglio visita, comprendendo il contesto dell’appuntamento,
+  il percorso clinico della visita, la raccolta delle informazioni sanitarie,
+  gli ordini clinici e la redazione del referto.
+
+  Ruolo nel sistema
+  -----------------
+  Questa pagina appartiene all’area Clinician del portale e rappresenta la
+  vista operativa centrale del flusso clinico. Da qui il professionista
+  sanitario può avviare la visita, consultare i dati dell’appuntamento,
+  registrare anamnesi e parametri vitali, gestire ordini e procedure,
+  firmare o pubblicare il referto e concludere l’incontro clinico.
+
+  Note
+  ----
+  Il file contiene il markup strutturale della pagina e i placeholder DOM
+  utilizzati dal relativo script JavaScript. La logica di autenticazione,
+  caricamento dei dati clinici, gestione dello stato dell’encounter,
+  registrazione delle attività, aggiornamento dei pulsanti e gestione delle
+  eventuali modali o errori è demandata ai moduli caricati in
+  `../../js/common/` e in `../../js/clinician/encounter-detail.js`.
+-->
+
+<!doctype html>
+<html lang="it">
+
+<head>
+  <!-- Metadati di base del documento HTML -->
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Titolo mostrato nella scheda del browser -->
+  <title>Dettaglio visita | Healthcare Portal</title>
+
+  <!-- Risorse statiche condivise della pagina -->
+  <link rel="icon" href="../../assets/favicon.ico" />
+  <link rel="stylesheet" href="../../css/styles.css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!--
+    Script condivisi e specifici della pagina.
+    Vengono caricati con `defer` per eseguire la logica applicativa
+    dopo il parsing completo del documento HTML.
+  -->
+  <script defer src="../../js/common/utils.js"></script>
+  <script defer src="../../js/common/session.js"></script>
+  <script defer src="../../js/common/auth.js"></script>
+  <script defer src="../../js/common/ui-components.js"></script>
+  <script defer src="../../js/clinician/encounter-detail.js"></script>
+</head>
+
+<body class="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
+  <!-- Placeholder del componente navbar condiviso, sostituito dinamicamente lato client -->
+  <div data-component="navbar"></div>
+
+  <!--
+    Contenuto principale della pagina dettaglio visita.
+    Comprende l’intestazione del percorso clinico, il riepilogo dell’appuntamento,
+    le azioni rapide, le sezioni cliniche operative e l’area laterale di sintesi.
+  -->
+  <main class="mx-auto w-full max-w-7xl px-4 py-8 flex-1">
+    <!--
+      Sezione introduttiva della pagina.
+      Presenta il contesto operativo del percorso clinico e mostra il riepilogo
+      iniziale dell’appuntamento e delle azioni principali disponibili.
+    -->
+    <section class="rounded-2xl border bg-white p-6 sm:p-8 shadow-sm">
+      <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
+        <div class="flex-1">
+          <div class="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-sm text-blue-700">
+            <span class="h-2 w-2 rounded-full bg-blue-600"></span>
+            Percorso clinico
+          </div>
+
+          <h1 class="mt-4 text-2xl sm:text-3xl font-semibold tracking-tight">
+            <span id="pageTitle">Dettaglio visita</span>
+          </h1>
+
+          <p class="mt-2 text-slate-600 leading-relaxed">
+            Consultazione e gestione operativa della visita: anamnesi, parametri vitali, ordini e referto.
+          </p>
+        </div>
+
+        <!-- Azioni rapide di navigazione e indicatore di caricamento globale -->
+        <div class="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
+          <a href="./agenda.html"
+            class="h-10 inline-flex items-center justify-center rounded-xl border bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-100">
+            Agenda
+          </a>
+
+          <a href="./dashboard.html"
+            class="h-10 inline-flex items-center justify-center rounded-xl border bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-100">
+            Dashboard
+          </a>
+
+          <div id="loadingBadge"
+            class="hidden inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-sm text-slate-700">
+            <span class="h-2 w-2 rounded-full bg-slate-500 animate-pulse"></span>
+            Caricamento…
+          </div>
+        </div>
+      </div>
+
+      <!--
+        Riepilogo iniziale dell’appuntamento e dell’encounter.
+        La colonna principale mostra il contesto del paziente e dell’appuntamento,
+        mentre la colonna laterale contiene le azioni rapide sul ciclo della visita.
+      -->
+      <div class="mt-6 grid gap-4 lg:grid-cols-12">
+        <!--
+          Pannello principale di contesto.
+          Contiene i dati sintetici di paziente, stato, orario, prestazione e note.
+        -->
+        <div class="lg:col-span-8 rounded-2xl border bg-slate-50 p-5">
+          <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+            <div class="min-w-0">
+              <div class="text-xs font-medium text-slate-500">Paziente</div>
+              <div id="patientName" class="mt-1 text-lg font-semibold text-slate-900 truncate">—</div>
+              <div id="patientHint" class="mt-1 text-sm text-slate-600">—</div>
+            </div>
+
+            <!-- Badge di stato appuntamento ed encounter valorizzati dinamicamente -->
+            <div class="flex flex-wrap items-center gap-2 sm:justify-end">
+              <div id="appointmentStatusPill"></div>
+              <div id="encounterStatusPill"></div>
+            </div>
+          </div>
+
+          <!-- Informazioni di scheduling e di prestazione -->
+          <div class="mt-4 grid gap-3 sm:grid-cols-2">
+            <div class="rounded-xl border bg-white px-4 py-3">
+              <div class="text-xs text-slate-500">Data e ora</div>
+              <div id="appointmentWhen" class="mt-1 text-sm font-semibold text-slate-900">—</div>
+              <div id="appointmentWindow" class="mt-1 text-xs text-slate-600">—</div>
+            </div>
+
+            <div class="rounded-xl border bg-white px-4 py-3">
+              <div class="text-xs text-slate-500">Prestazione</div>
+              <div id="serviceName" class="mt-1 text-sm font-semibold text-slate-900">—</div>
+              <div id="serviceCode" class="mt-1 text-xs text-slate-600">—</div>
+            </div>
+          </div>
+
+          <!-- Note amministrative o contestuali associate all’appuntamento -->
+          <div class="mt-4 rounded-xl border bg-white px-4 py-3">
+            <div class="text-xs text-slate-500">Note</div>
+            <div id="appointmentNotes" class="mt-1 text-sm text-slate-700 leading-relaxed">—</div>
+          </div>
+        </div>
+
+        <!--
+          Pannello laterale delle azioni rapide.
+          Raccoglie i pulsanti principali per il ciclo di vita della visita e del referto.
+        -->
+        <aside class="lg:col-span-4 rounded-2xl border bg-white p-5">
+          <div class="text-sm font-semibold text-slate-900">Azioni rapide</div>
+          <p class="mt-1 text-sm text-slate-600 leading-relaxed">
+            Avvio, firma, pubblicazione e conclusione della visita.
+          </p>
+
+          <div class="mt-4 grid gap-2">
+            <button id="btnStartEncounter" type="button"
+              class="h-11 inline-flex items-center justify-center rounded-xl bg-blue-600 px-4 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-100">
+              Avvia visita
+            </button>
+
+            <button id="btnCompleteEncounter" type="button"
+              class="h-11 inline-flex items-center justify-center rounded-xl border px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-100">
+              Concludi visita
+            </button>
+
+            <button id="btnSignReport" type="button"
+              class="h-11 inline-flex items-center justify-center rounded-xl border px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-100">
+              Firma referto
+            </button>
+
+            <button id="btnPublishReport" type="button"
+              class="h-11 inline-flex items-center justify-center rounded-xl border px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-100">
+              Pubblica referto
+            </button>
+          </div>
+
+          <!-- Messaggio sintetico di supporto contestuale per l’utente -->
+          <div id="actionHint"
+            class="mt-4 rounded-xl border bg-slate-50 px-4 py-3 text-xs text-slate-600 leading-relaxed">
+            —
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <!--
+      Layout principale delle sezioni cliniche operative.
+      La colonna sinistra raccoglie i contenuti clinici, mentre la colonna destra
+      mostra il riepilogo sintetico della visita e gli errori di pagina.
+    -->
+    <section class="mt-6 grid gap-6 lg:grid-cols-12">
+      <div class="lg:col-span-8 space-y-6">
+        <!--
+          Stato di blocco quando l’encounter non è ancora avviato.
+          Consente al clinico di iniziare la visita prima di registrare attività.
+        -->
+        <div id="notStartedBox" class="hidden rounded-2xl border bg-white p-6 sm:p-8 shadow-sm">
+          <h2 class="text-lg font-semibold text-slate-900">Visita non ancora avviata</h2>
+          <p class="mt-2 text-sm text-slate-600 leading-relaxed">
+            Per registrare attività cliniche è necessario avviare la visita.
+          </p>
+
+          <div class="mt-4 flex flex-col sm:flex-row gap-2">
+            <button id="btnStartEncounterInline" type="button"
+              class="h-11 inline-flex items-center justify-center rounded-xl bg-blue-600 px-4 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-100">
+              Avvia visita
+            </button>
+
+            <a href="./agenda.html"
+              class="h-11 inline-flex items-center justify-center rounded-xl border bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-100">
+              Torna all’elenco
+            </a>
+          </div>
+        </div>
+
+        <!--
+          Sezione dedicata al questionario di pre-triage.
+          Mostra il contenuto del questionario, se presente.
+        -->
+        <div class="rounded-2xl border bg-white p-6 sm:p-8 shadow-sm">
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <h2 class="text-lg font-semibold text-slate-900">Pre-triage</h2>
+              <p class="mt-1 text-sm text-slate-600">Questionario compilato prima della visita (se disponibile).</p>
+            </div>
+          </div>
+
+          <div id="pretriageEmpty" class="mt-5 rounded-2xl border bg-slate-50 p-5 text-sm text-slate-600">
+            Nessun questionario disponibile.
+          </div>
+
+          <div id="pretriageBox" class="hidden mt-5 rounded-2xl border bg-slate-50 p-5">
+            <div class="text-xs font-medium text-slate-500">Contenuto</div>
+            <pre id="pretriageContent"
+              class="mt-2 whitespace-pre-wrap break-words text-sm text-slate-800 leading-relaxed"></pre>
+          </div>
+        </div>
+
+        <!--
+          Sezione anamnesi.
+          Consente la consultazione delle note già registrate e l’inserimento
+          di nuove osservazioni cliniche.
+        -->
+        <div class="rounded-2xl border bg-white p-6 sm:p-8 shadow-sm">
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <h2 class="text-lg font-semibold text-slate-900">Anamnesi</h2>
+              <p class="mt-1 text-sm text-slate-600">Note cliniche e osservazioni registrate durante la visita.</p>
+            </div>
+          </div>
+
+          <div id="anamnesisList" class="mt-5 space-y-3"></div>
+
+          <div id="anamnesisEmpty" class="hidden mt-5 rounded-2xl border bg-slate-50 p-5 text-sm text-slate-600">
+            Nessuna voce registrata.
+          </div>
+
+          <!-- Form di inserimento di una nuova nota anamnestica -->
+          <form id="anamnesisForm" class="mt-6">
+            <label class="text-sm font-medium text-slate-700" for="anamnesisContent">Nuova nota</label>
+            <textarea id="anamnesisContent" rows="4" placeholder="Inserire una nota clinica..."
+              class="mt-2 w-full rounded-xl border px-4 py-3 text-sm focus:outline-none focus:ring-4 focus:ring-blue-100"></textarea>
+
+            <div class="mt-3 flex items-center justify-end gap-2">
+              <button id="btnAddAnamnesis" type="submit"
+                class="h-11 inline-flex items-center justify-center rounded-xl bg-blue-600 px-4 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-100">
+                Salva
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!--
+          Sezione parametri vitali.
+          Mostra le misurazioni già registrate e consente di aggiungerne di nuove.
+        -->
+        <div class="rounded-2xl border bg-white p-6 sm:p-8 shadow-sm">
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <h2 class="text-lg font-semibold text-slate-900">Parametri vitali</h2>
+              <p class="mt-1 text-sm text-slate-600">Registrazioni di misurazioni e valori clinici.</p>
+            </div>
+          </div>
+
+          <div class="mt-5 overflow-x-auto">
+            <table class="min-w-full text-sm">
+              <thead>
+                <tr class="text-left text-xs text-slate-500 border-b">
+                  <th class="py-3 pr-4 font-medium">Data/ora</th>
+                  <th class="py-3 pr-4 font-medium">Tipo</th>
+                  <th class="py-3 pr-4 font-medium">Valore</th>
+                  <th class="py-3 pr-4 font-medium">Unità</th>
+                </tr>
+              </thead>
+              <tbody id="vitalSignsTbody" class="divide-y">
+                <tr>
+                  <td colspan="4" class="py-6 text-center text-slate-600">—</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Form di registrazione di un nuovo parametro vitale -->
+          <form id="vitalForm" class="mt-6 grid gap-3 sm:grid-cols-12">
+            <div class="sm:col-span-4">
+              <label class="text-sm font-medium text-slate-700" for="vitalType">Tipo</label>
+              <select id="vitalType"
+                class="mt-2 h-11 w-full rounded-xl border bg-white px-4 text-sm focus:outline-none focus:ring-4 focus:ring-blue-100">
+                <option value="HeartRate">Frequenza cardiaca</option>
+                <option value="BloodPressureSystolic">Pressione sistolica</option>
+                <option value="BloodPressureDiastolic">Pressione diastolica</option>
+                <option value="Temperature">Temperatura</option>
+                <option value="SpO2">Saturazione O₂</option>
+                <option value="RespiratoryRate">Frequenza respiratoria</option>
+                <option value="Weight">Peso</option>
+                <option value="Height">Altezza</option>
+              </select>
+            </div>
+
+            <div class="sm:col-span-3">
+              <label class="text-sm font-medium text-slate-700" for="vitalValue">Valore</label>
+              <input id="vitalValue" type="number" step="0.01" placeholder="0"
+                class="mt-2 h-11 w-full rounded-xl border px-4 text-sm focus:outline-none focus:ring-4 focus:ring-blue-100" />
+            </div>
+
+            <div class="sm:col-span-3">
+              <label class="text-sm font-medium text-slate-700" for="vitalUnit">Unità</label>
+              <input id="vitalUnit" type="text" placeholder="es. bpm, mmHg, °C"
+                class="mt-2 h-11 w-full rounded-xl border px-4 text-sm focus:outline-none focus:ring-4 focus:ring-blue-100" />
+            </div>
+
+            <div class="sm:col-span-2 flex items-end">
+              <button id="btnAddVital" type="submit"
+                class="h-11 w-full inline-flex items-center justify-center rounded-xl bg-blue-600 px-4 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-100">
+                Registra
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!--
+          Sezione ordini e procedure.
+          Mostra gli ordini clinici già presenti e consente di crearne di nuovi.
+        -->
+        <div class="rounded-2xl border bg-white p-6 sm:p-8 shadow-sm">
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <h2 class="text-lg font-semibold text-slate-900">Ordini e procedure</h2>
+              <p class="mt-1 text-sm text-slate-600">Richieste cliniche e registrazione delle esecuzioni.</p>
+            </div>
+          </div>
+
+          <div class="mt-5 overflow-x-auto">
+            <table class="min-w-full text-sm">
+              <thead>
+                <tr class="text-left text-xs text-slate-500 border-b">
+                  <th class="py-3 pr-4 font-medium">Data</th>
+                  <th class="py-3 pr-4 font-medium">Prestazione</th>
+                  <th class="py-3 pr-4 font-medium">Stato</th>
+                  <th class="py-3 pr-4 font-medium">Note</th>
+                  <th class="py-3 text-right font-medium">Azioni</th>
+                </tr>
+              </thead>
+              <tbody id="ordersTbody" class="divide-y">
+                <tr>
+                  <td colspan="5" class="py-6 text-center text-slate-600">—</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Form di creazione di un nuovo ordine clinico -->
+          <form id="orderForm" class="mt-6 grid gap-3 sm:grid-cols-12">
+            <div class="sm:col-span-6">
+              <label class="text-sm font-medium text-slate-700" for="orderService">Prestazione</label>
+              <select id="orderService"
+                class="mt-2 h-11 w-full rounded-xl border bg-white px-4 text-sm focus:outline-none focus:ring-4 focus:ring-blue-100">
+                <option value="">Selezionare…</option>
+              </select>
+            </div>
+
+            <div class="sm:col-span-4">
+              <label class="text-sm font-medium text-slate-700" for="orderNotes">Note</label>
+              <input id="orderNotes" type="text" placeholder="Facoltative"
+                class="mt-2 h-11 w-full rounded-xl border px-4 text-sm focus:outline-none focus:ring-4 focus:ring-blue-100" />
+            </div>
+
+            <div class="sm:col-span-2 flex items-end">
+              <button id="btnAddOrder" type="submit"
+                class="h-11 w-full inline-flex items-center justify-center rounded-xl bg-blue-600 px-4 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-100">
+                Crea ordine
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!--
+          Sezione referto clinico.
+          Consente la redazione della bozza, la firma e la pubblicazione finale.
+        -->
+        <div class="rounded-2xl border bg-white p-6 sm:p-8 shadow-sm">
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <h2 class="text-lg font-semibold text-slate-900">Referto</h2>
+              <p class="mt-1 text-sm text-slate-600">Redazione, firma e pubblicazione del referto clinico.</p>
+            </div>
+
+            <!-- Stato corrente del referto e metadati sintetici -->
+            <div class="text-right">
+              <div id="reportStatus" class="text-sm font-semibold text-slate-900">—</div>
+              <div id="reportMeta" class="mt-1 text-xs text-slate-600">—</div>
+            </div>
+          </div>
+
+          <label class="mt-5 block text-sm font-medium text-slate-700" for="reportContent">Contenuto</label>
+          <textarea id="reportContent" rows="10" placeholder="Inserire il contenuto del referto…"
+            class="mt-2 w-full rounded-xl border px-4 py-3 text-sm focus:outline-none focus:ring-4 focus:ring-blue-100"></textarea>
+
+          <div class="mt-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div class="text-xs text-slate-600 leading-relaxed">
+              Il contenuto viene salvato come bozza. Dopo la firma il testo viene congelato e può essere solo
+              pubblicato.
+            </div>
+
+            <!-- Azioni principali sul referto -->
+            <div class="flex items-center justify-end gap-2">
+              <button id="btnSaveDraft" type="button"
+                class="h-11 inline-flex items-center justify-center whitespace-nowrap rounded-xl bg-blue-600 px-4 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-100">
+                Salva bozza
+              </button>
+              <button id="btnSignReportInline" type="button"
+                class="h-11 inline-flex items-center justify-center rounded-xl border px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-100">
+                Firma
+              </button>
+              <button id="btnPublishReportInline" type="button"
+                class="h-11 inline-flex items-center justify-center rounded-xl border px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-100">
+                Pubblica
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!--
+        Colonna laterale di riepilogo.
+        Mostra informazioni sintetiche sull’encounter e gli eventuali errori globali.
+      -->
+      <div class="lg:col-span-4 space-y-6">
+        <div class="rounded-2xl border bg-white p-6 shadow-sm">
+          <h3 class="text-sm font-semibold text-slate-900">Riepilogo visita</h3>
+          <div class="mt-3 grid gap-2 text-sm text-slate-700">
+            <div class="flex items-center justify-between gap-3">
+              <span class="text-slate-500">Riferimento</span>
+              <span id="encounterRef" class="font-medium truncate" title="—">—</span>
+            </div>
+            <div class="flex items-center justify-between gap-3">
+              <span class="text-slate-500">Apertura</span>
+              <span id="encounterStart" class="font-medium">—</span>
+            </div>
+            <div class="flex items-center justify-between gap-3">
+              <span class="text-slate-500">Chiusura</span>
+              <span id="encounterEnd" class="font-medium">—</span>
+            </div>
+          </div>
+
+          <!-- Note sintetiche o stato informativo dell’encounter -->
+          <div id="encounterNotesBox"
+            class="mt-4 rounded-xl border bg-slate-50 px-4 py-3 text-sm text-slate-700 leading-relaxed">
+            —
+          </div>
+        </div>
+
+        <!-- Contenitore per errori globali della pagina mostrati lato client -->
+        <div id="pageError" class="hidden rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700"
+          role="alert" aria-live="polite"></div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Placeholder dei componenti condivisi renderizzati dinamicamente lato client -->
+  <div data-component="footer"></div>
+  <div data-component="modal"></div>
+</body>
+
+</html>

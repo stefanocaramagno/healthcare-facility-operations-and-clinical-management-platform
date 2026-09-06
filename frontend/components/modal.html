@@ -1,0 +1,48 @@
+<!--
+  File: frontend/components/modal.html
+
+  Scopo
+  -----
+  Definire il componente modale condiviso del front-end, utilizzato per mostrare
+  messaggi, conferme, avvisi o contenuti dinamici sovrapposti alla pagina corrente.
+
+  Ruolo nel sistema
+  -----------------
+  Questo componente funge da contenitore riutilizzabile per interazioni secondarie
+  che richiedono l’attenzione dell’utente senza cambiare pagina, mantenendo una
+  struttura uniforme per titolo, contenuto e azioni.
+
+  Note
+  ----
+  Il componente contiene soltanto il markup base e gli hook DOM necessari agli script
+  JavaScript che ne gestiscono apertura, chiusura e popolamento dinamico del contenuto.
+-->
+
+<div id="aplModal" class="fixed inset-0 z-50 hidden" aria-hidden="true">
+  <!-- Overlay semitrasparente che oscura il contenuto sottostante -->
+  <div class="absolute inset-0 bg-slate-900/50"></div>
+
+  <!-- Contenitore centrale del dialogo modale -->
+  <div class="relative mx-auto max-w-lg px-4 py-8">
+    <div class="rounded-2xl border bg-white shadow-xl overflow-hidden">
+      <!-- Header della modale con titolo dinamico e pulsante di chiusura -->
+      <div class="flex items-start justify-between gap-3 border-b px-5 py-4">
+        <h3 id="aplModalTitle" class="text-base font-semibold text-slate-900">—</h3>
+        <button id="aplModalClose" type="button"
+          class="rounded-lg px-2 py-1 text-slate-500 hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus:ring-4 focus:ring-blue-100"
+          aria-label="Chiudi">
+          ✕
+        </button>
+      </div>
+
+      <!-- Corpo centrale della modale, destinato a contenuti testuali o markup dinamico -->
+      <div id="aplModalBody" class="px-5 py-4 text-sm text-slate-700">
+        —
+      </div>
+
+      <!-- Area azioni, popolata dinamicamente con pulsanti contestuali -->
+      <div id="aplModalActions" class="border-t px-5 py-4 flex flex-wrap justify-end gap-2">
+      </div>
+    </div>
+  </div>
+</div>

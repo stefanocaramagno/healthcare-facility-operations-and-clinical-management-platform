@@ -1,0 +1,82 @@
+<!--
+  File: frontend/components/navbar.html
+
+  Scopo
+  -----
+  Definire la barra di navigazione condivisa del front-end, includendo identità
+  visuale della piattaforma, stato della sessione utente, azioni di accesso/uscita
+  e contenitori per la navigazione dinamica desktop e mobile.
+
+  Ruolo nel sistema
+  -----------------
+  Questo componente viene caricato come shell condivisa nelle pagine applicative
+  e costituisce il punto di riferimento principale per branding, contesto utente
+  e collegamenti di navigazione coerenti con il ruolo autenticato.
+
+  Note
+  ----
+  Il markup contiene soltanto la struttura del componente e gli hook DOM necessari
+  agli script JavaScript che popolano dinamicamente ruolo, email, sottotitolo,
+  pulsanti di sessione e voci di menu nei contenitori dedicati.
+-->
+
+<header class="sticky top-0 z-20 border-b bg-white/90 backdrop-blur">
+  <!--
+    Riga principale della navbar.
+    Include:
+    - collegamento alla home con branding della piattaforma;
+    - informazioni sintetiche sulla sessione corrente;
+    - pulsanti di accesso e logout mostrati dinamicamente in base allo stato utente.
+  -->
+  <div class="mx-auto max-w-7xl px-4 py-4 flex items-center justify-between gap-4">
+    <!-- Brand / logo cliccabile con sottotitolo aggiornabile lato script -->
+    <a href="/index.html" class="flex items-center gap-2" aria-label="Torna alla home">
+      <div class="h-9 w-9 rounded-xl bg-blue-600 text-white grid place-items-center font-semibold">H</div>
+      <div class="leading-tight">
+        <div class="font-semibold">Healthcare Portal</div>
+        <div id="navbarSubtitle" class="text-xs text-slate-500">Portale</div>
+      </div>
+    </a>
+
+    <!-- Area destra dedicata al contesto utente e alle azioni di sessione -->
+    <div class="flex items-center gap-3">
+      <!-- Indicatore sintetico del ruolo corrente -->
+      <span id="rolePill"
+        class="hidden sm:inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700">
+        <span class="h-1.5 w-1.5 rounded-full bg-blue-600"></span>
+        <span id="rolePillText">—</span>
+      </span>
+
+      <!-- Dati essenziali dell’utente loggato -->
+      <div class="hidden sm:block text-right">
+        <div id="userEmail" class="text-sm font-medium text-slate-800">—</div>
+        <div id="userSubline" class="text-xs text-slate-500">Sessione</div>
+      </div>
+
+      <!-- Pulsante di accesso mostrato quando non è presente una sessione autenticata -->
+      <a id="loginBtn"
+        class="hidden h-10 rounded-xl bg-blue-600 px-4 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-100"
+        href="/pages/auth/login.html">
+        Accedi
+      </a>
+
+      <!-- Pulsante di uscita mostrato quando l’utente risulta autenticato -->
+      <button id="logoutBtn"
+        class="hidden h-10 rounded-xl border px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-100"
+        type="button">
+        Esci
+      </button>
+    </div>
+  </div>
+
+  <!-- Contenitore della navigazione desktop, popolato dinamicamente -->
+  <nav class="hidden sm:block border-t bg-white">
+    <div id="navDesktop" class="mx-auto max-w-7xl px-4 py-3 flex flex-wrap items-center gap-2 text-sm"></div>
+  </nav>
+
+  <!-- Versione mobile del menu, racchiusa in un blocco espandibile -->
+  <details class="sm:hidden border-t bg-white">
+    <summary class="mx-auto max-w-7xl px-4 py-3 cursor-pointer list-none text-sm text-slate-700">Menu</summary>
+    <div id="navMobile" class="mx-auto max-w-7xl px-4 pb-4 grid gap-2 text-sm"></div>
+  </details>
+</header>

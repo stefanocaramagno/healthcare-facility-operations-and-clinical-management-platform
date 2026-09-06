@@ -1,0 +1,324 @@
+<!--
+  File: frontend/pages/admin/delegate-detail.html
+
+  Scopo
+  -----
+  Definire la pagina amministrativa di dettaglio del delegato, consentendo
+  la visualizzazione e la gestione delle informazioni anagrafiche, oltre alla
+  consultazione delle deleghe associate e alla creazione iniziale della scheda
+  quando previsto.
+
+  Ruolo nel sistema
+  -----------------
+  Questa pagina appartiene all’area Admin del portale e rappresenta il punto
+  operativo di consultazione e modifica della scheda di un singolo delegato.
+  Costituisce il riferimento centrale per la gestione dell’anagrafica del
+  delegato e per la lettura delle deleghe a lui collegate.
+
+  Note
+  ----
+  Il file contiene il markup strutturale della pagina e i placeholder DOM
+  utilizzati dagli script JavaScript associati. La logica di autenticazione,
+  bootstrap dei componenti condivisi, caricamento dati e salvataggio delle
+  modifiche è delegata ai moduli caricati in `../../js/common/` e
+  `../../js/admin/delegate-detail.js`.
+-->
+
+<!doctype html>
+<html lang="it">
+
+<head>
+  <!-- Metadati di base del documento HTML -->
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Titolo mostrato nella scheda del browser -->
+  <title>Dettaglio delegato | Healthcare Portal</title>
+
+  <!-- Risorse statiche condivise della pagina -->
+  <link rel="icon" href="../../assets/favicon.ico" />
+  <link rel="stylesheet" href="../../css/styles.css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!--
+    Script condivisi e specifici della pagina.
+    Vengono caricati con `defer` per eseguire la logica applicativa
+    dopo il parsing completo del documento HTML.
+  -->
+  <script defer src="../../js/common/utils.js"></script>
+  <script defer src="../../js/common/session.js"></script>
+  <script defer src="../../js/common/auth.js"></script>
+  <script defer src="../../js/common/ui-components.js"></script>
+  <script defer src="../../js/admin/delegate-detail.js"></script>
+</head>
+
+<body class="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
+  <!-- Placeholder del componente navbar condiviso, sostituito dinamicamente lato client -->
+  <div data-component="navbar"></div>
+
+  <!--
+    Contenuto principale della pagina di dettaglio delegato.
+    Comprende lo stato di richiesta non disponibile, la testata della scheda,
+    le sezioni account/anagrafica/deleghe ed eventuali errori globali.
+  -->
+  <main class="mx-auto w-full max-w-7xl px-4 py-8 flex-1">
+    <!--
+      Stato alternativo mostrato quando la scheda non può essere aperta
+      oppure quando il contesto richiesto non è disponibile.
+    -->
+    <section id="missingState" class="hidden rounded-2xl border bg-white p-6 sm:p-8 shadow-sm">
+      <div class="inline-flex items-center gap-2 rounded-full bg-red-50 px-3 py-1 text-sm text-red-700">
+        <span class="h-2 w-2 rounded-full bg-red-600"></span>
+        Richiesta non disponibile
+      </div>
+
+      <h1 class="mt-4 text-2xl sm:text-3xl font-semibold tracking-tight">Impossibile aprire la scheda</h1>
+
+      <p class="mt-2 text-slate-600 leading-relaxed">
+        La scheda richiesta non è al momento disponibile. Torni all’elenco dei delegati e selezioni nuovamente il
+        profilo.
+      </p>
+
+      <!-- Azioni di recupero disponibili in caso di scheda non apribile -->
+      <div class="mt-6 flex flex-wrap gap-2">
+        <a href="./delegates.html"
+          class="h-10 inline-flex items-center rounded-xl bg-blue-600 px-4 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-100">
+          Vai all’elenco delegati
+        </a>
+
+        <a href="./dashboard.html"
+          class="h-10 inline-flex items-center rounded-xl border bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-100">
+          Dashboard
+        </a>
+      </div>
+    </section>
+
+    <!--
+      Sezione principale della scheda delegato.
+      Mostra intestazione, identificativi, azioni rapide e messaggi contestuali
+      relativi alla modalità corrente della pagina.
+    -->
+    <section id="mainContent" class="rounded-2xl border bg-white p-6 sm:p-8 shadow-sm">
+      <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
+        <div class="flex-1">
+          <div class="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-sm text-blue-700">
+            <span class="h-2 w-2 rounded-full bg-blue-600"></span>
+            Anagrafiche
+          </div>
+
+          <h1 class="mt-4 text-2xl sm:text-3xl font-semibold tracking-tight">
+            <span id="delegateTitleName">Dettaglio delegato</span>
+          </h1>
+
+          <p class="mt-2 text-slate-600 leading-relaxed" id="delegateSubtitle">
+            Visualizzazione e gestione delle informazioni principali e delle deleghe associate.
+          </p>
+        </div>
+
+        <!-- Pulsanti di navigazione e indicatore di caricamento contestuale -->
+        <div class="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
+          <a href="./delegates.html"
+            class="h-10 inline-flex items-center justify-center rounded-xl border bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-100">
+            Elenco delegati
+          </a>
+
+          <a href="./dashboard.html"
+            class="h-10 inline-flex items-center justify-center rounded-xl border bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-100">
+            Dashboard
+          </a>
+
+          <div id="loadingBadge"
+            class="hidden h-10 inline-flex items-center justify-center gap-2 rounded-xl bg-slate-100 px-4 text-sm text-slate-700">
+            <span class="h-2 w-2 rounded-full bg-slate-500 animate-pulse"></span>
+            Caricamento…
+          </div>
+        </div>
+      </div>
+
+      <!-- Area riepilogativa iniziale con identificativi, note di contesto e azioni di salvataggio -->
+      <div class="mt-6 grid gap-3 lg:grid-cols-12">
+        <div class="lg:col-span-7 rounded-2xl border bg-slate-50 p-5">
+          <div class="text-xs font-medium text-slate-500">Identificativi</div>
+
+          <div class="mt-3 grid gap-3 sm:grid-cols-2">
+            <div class="rounded-xl border bg-white px-4 py-3">
+              <div class="text-xs text-slate-500">Delegato</div>
+              <div class="mt-1">
+                <span id="delegateUserId" class="text-sm font-semibold text-slate-900 break-all">—</span>
+              </div>
+            </div>
+
+            <div class="rounded-xl border bg-white px-4 py-3">
+              <div class="text-xs text-slate-500">Profilo</div>
+              <div class="mt-1">
+                <span id="delegateProfileId" class="text-sm font-semibold text-slate-900 break-all">—</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Messaggio mostrato quando il profilo anagrafico non è ancora completo -->
+          <div id="profileHint" class="hidden mt-4 rounded-xl border bg-white px-4 py-3 text-sm text-slate-700">
+            Le informazioni anagrafiche non risultano ancora complete. È possibile inserirle e salvare la scheda.
+          </div>
+
+          <!-- Messaggio mostrato nella modalità di creazione iniziale del delegato -->
+          <div id="createModeNotice"
+            class="hidden mt-4 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800">
+            In questa modalità vengono raccolti sia i dati di accesso sia l’anagrafica del nuovo delegato. Le deleghe
+            saranno consultabili dopo la creazione della scheda.
+          </div>
+        </div>
+
+        <div class="lg:col-span-5 rounded-2xl border bg-slate-50 p-5">
+          <div class="text-xs font-medium text-slate-500">Azioni rapide</div>
+
+          <div class="mt-3 grid gap-2">
+            <button id="btnSaveProfile" type="button"
+              class="h-11 inline-flex items-center justify-center rounded-xl bg-blue-600 px-4 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-100">
+              Salva profilo
+            </button>
+          </div>
+
+          <div id="saveInfoText"
+            class="mt-4 rounded-xl border bg-white px-4 py-3 text-xs text-slate-600 leading-relaxed">
+            Le modifiche vengono applicate solo dopo il salvataggio.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!--
+      Sezione dati di accesso.
+      È prevista principalmente per la modalità di creazione del nuovo delegato,
+      in cui vengono raccolte le credenziali iniziali dell’account.
+    -->
+    <section id="accountSection" class="hidden mt-6 rounded-2xl border bg-white p-6 sm:p-8 shadow-sm">
+      <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+        <div>
+          <h2 class="text-lg font-semibold">Dati di accesso</h2>
+          <p class="mt-1 text-sm text-slate-600">
+            Credenziali iniziali utilizzate per creare il nuovo account delegato.
+          </p>
+        </div>
+      </div>
+
+      <div class="mt-6 grid gap-4 lg:grid-cols-12">
+        <div class="lg:col-span-7">
+          <label class="text-sm font-medium text-slate-700" for="email">E-mail</label>
+          <input id="email" type="email" autocomplete="off"
+            class="mt-2 h-11 w-full rounded-xl border px-4 text-sm focus:outline-none focus:ring-4 focus:ring-blue-100"
+            placeholder="nome.cognome@example.com" />
+        </div>
+
+        <div class="lg:col-span-5">
+          <label class="text-sm font-medium text-slate-700" for="password">Password iniziale</label>
+          <input id="password" type="password" autocomplete="new-password"
+            class="mt-2 h-11 w-full rounded-xl border px-4 text-sm focus:outline-none focus:ring-4 focus:ring-blue-100"
+            placeholder="Almeno 8 caratteri" />
+        </div>
+      </div>
+    </section>
+
+    <!--
+      Sezione anagrafica del delegato.
+      Contiene i campi principali modificabili relativi ai dati personali e di contatto.
+    -->
+    <section id="sectionProfile" class="mt-6 rounded-2xl border bg-white p-6 sm:p-8 shadow-sm">
+      <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+        <div>
+          <h2 class="text-lg font-semibold">Anagrafica</h2>
+          <p class="mt-1 text-sm text-slate-600">
+            Aggiornamento dei dati principali del delegato.
+          </p>
+        </div>
+      </div>
+
+      <div class="mt-6 grid gap-4 lg:grid-cols-12">
+        <div class="lg:col-span-6">
+          <label class="text-sm font-medium text-slate-700" for="firstName">Nome</label>
+          <input id="firstName" type="text" autocomplete="off"
+            class="mt-2 h-11 w-full rounded-xl border px-4 text-sm focus:outline-none focus:ring-4 focus:ring-blue-100"
+            placeholder="Nome" />
+        </div>
+
+        <div class="lg:col-span-6">
+          <label class="text-sm font-medium text-slate-700" for="lastName">Cognome</label>
+          <input id="lastName" type="text" autocomplete="off"
+            class="mt-2 h-11 w-full rounded-xl border px-4 text-sm focus:outline-none focus:ring-4 focus:ring-blue-100"
+            placeholder="Cognome" />
+        </div>
+
+        <div class="lg:col-span-5">
+          <label class="text-sm font-medium text-slate-700" for="phone">Telefono</label>
+          <input id="phone" type="tel" autocomplete="off"
+            class="mt-2 h-11 w-full rounded-xl border px-4 text-sm focus:outline-none focus:ring-4 focus:ring-blue-100"
+            placeholder="Telefono" />
+        </div>
+
+        <div class="lg:col-span-7">
+          <label class="text-sm font-medium text-slate-700" for="address">Indirizzo</label>
+          <input id="address" type="text" autocomplete="off"
+            class="mt-2 h-11 w-full rounded-xl border px-4 text-sm focus:outline-none focus:ring-4 focus:ring-blue-100"
+            placeholder="Indirizzo" />
+        </div>
+      </div>
+    </section>
+
+    <!--
+      Sezione deleghe associate.
+      Mostra l’elenco delle deleghe collegate al delegato e consente la consultazione
+      del relativo stato e delle informazioni di validità.
+    -->
+    <section id="sectionDelegations" class="mt-6 rounded-2xl border bg-white p-6 sm:p-8 shadow-sm">
+      <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+        <div>
+          <h2 class="text-lg font-semibold">Deleghe associate</h2>
+          <p class="mt-1 text-sm text-slate-600">
+            Consultazione delle deleghe collegate al delegato e aggiornamento del relativo stato.
+          </p>
+        </div>
+      </div>
+
+      <!-- Stato vuoto mostrato quando il delegato non ha deleghe associate -->
+      <div id="delegationsEmpty" class="hidden mt-6 rounded-2xl border bg-slate-50 p-6">
+        <div class="text-sm font-medium text-slate-800">Nessuna delega presente</div>
+        <div class="mt-1 text-sm text-slate-600">
+          Al momento non risultano deleghe associate a questo delegato.
+        </div>
+      </div>
+
+      <!-- Tabella principale delle deleghe associate -->
+      <div class="mt-6 overflow-x-auto">
+        <table class="min-w-full text-sm">
+          <thead>
+            <tr class="text-left text-xs text-slate-500 border-b">
+              <th class="py-3 pr-4 font-medium">Assistito</th>
+              <th class="py-3 pr-4 font-medium">Ambito</th>
+              <th class="py-3 pr-4 font-medium">Validità</th>
+              <th class="py-3 pr-4 font-medium">Stato</th>
+              <th class="py-3 pr-4 font-medium">Creata</th>
+              <th class="py-3 text-right font-medium">Azioni</th>
+            </tr>
+          </thead>
+
+          <!-- Corpo tabella popolato dinamicamente -->
+          <tbody id="delegationsTbody" class="divide-y">
+            <tr>
+              <td colspan="6" class="py-6 text-center text-slate-600">Caricamento…</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Contenitore dedicato a eventuali errori globali della pagina -->
+    <div id="pageError" class="hidden mt-6 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700"
+      role="alert" aria-live="polite"></div>
+  </main>
+
+  <!-- Placeholder dei componenti condivisi sostituiti dinamicamente lato client -->
+  <div data-component="footer"></div>
+  <div data-component="modal"></div>
+</body>
+
+</html>

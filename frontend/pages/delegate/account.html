@@ -1,0 +1,323 @@
+<!--
+  File: frontend/pages/delegate/account.html
+
+  Scopo
+  -----
+  Definire la pagina dell’area Delegate dedicata alla consultazione
+  delle informazioni dell’account autenticato, dei dati anagrafici del
+  profilo delegato e dell’elenco delle deleghe disponibili, consentendo
+  una visione sintetica del profilo e un accesso rapido alle aree
+  dell’assistito.
+
+  Ruolo nel sistema
+  -----------------
+  Questa pagina appartiene all’area Delegate del portale e rappresenta la
+  vista attraverso cui il delegato può verificare le informazioni del
+  proprio account, controllare lo stato del profilo associato, consultare
+  il numero di assistiti collegati tramite delega e visualizzare l’elenco
+  delle deleghe attive o disponibili. La pagina integra inoltre strumenti
+  di filtro locale sulle deleghe e collegamenti rapidi alle sezioni
+  principali del portale delegate.
+
+  Note
+  ----
+  Il file contiene il markup strutturale della pagina e i placeholder DOM
+  utilizzati dal relativo script JavaScript. La logica di autenticazione,
+  caricamento dell’account e del profilo delegato, aggiornamento dei dati
+  sintetici, rendering dell’elenco deleghe, applicazione dei filtri,
+  gestione dello stato vuoto e trattamento degli errori è demandata ai
+  moduli caricati in `../../js/common/` e in
+  `../../js/delegate/account.js`.
+-->
+
+<!doctype html>
+<html lang="it">
+
+<head>
+  <!-- Metadati di base del documento HTML -->
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Titolo mostrato nella scheda del browser -->
+  <title>Account | Healthcare Portal</title>
+
+  <!-- Risorse statiche condivise della pagina -->
+  <link rel="icon" href="../../assets/favicon.ico" />
+  <link rel="stylesheet" href="../../css/styles.css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!--
+    Script condivisi e specifici della pagina.
+    Vengono caricati con `defer` per eseguire la logica applicativa
+    dopo il parsing completo del documento HTML.
+  -->
+  <script defer src="../../js/common/utils.js"></script>
+  <script defer src="../../js/common/session.js"></script>
+  <script defer src="../../js/common/auth.js"></script>
+  <script defer src="../../js/common/ui-components.js"></script>
+  <script defer src="../../js/delegate/account.js"></script>
+</head>
+
+<body class="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
+  <!-- Placeholder del componente navbar condiviso, sostituito dinamicamente lato client -->
+  <div data-component="navbar"></div>
+
+  <!--
+    Contenuto principale della pagina account del delegato.
+    Comprende l’intestazione della vista, il riepilogo del profilo,
+    i dati account e profilo, l’elenco delle deleghe e il contenitore
+    per eventuali errori globali.
+  -->
+  <main class="mx-auto w-full max-w-7xl px-4 py-8 flex-1">
+    <!--
+      Sezione introduttiva della pagina.
+      Presenta il contesto dell’area account del delegato e include
+      il collegamento rapido verso la dashboard.
+    -->
+    <section class="rounded-2xl border bg-white p-6 sm:p-8 shadow-sm">
+      <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
+        <div class="flex-1">
+          <div class="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-sm text-blue-700">
+            <span class="h-2 w-2 rounded-full bg-blue-600"></span>
+            Area delegato
+          </div>
+
+          <h1 class="mt-4 text-2xl sm:text-3xl font-semibold tracking-tight">Account</h1>
+
+          <p class="mt-2 text-slate-600 leading-relaxed">
+            Consulti le informazioni dell’account, i dati anagrafici del profilo delegato e gestisca l’accesso agli
+            assistiti tramite delega.
+          </p>
+        </div>
+
+        <!-- Azione rapida verso la dashboard e indicatore di caricamento globale -->
+        <div class="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
+          <a href="./dashboard.html"
+            class="h-10 inline-flex items-center justify-center rounded-xl border bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-100">
+            Dashboard
+          </a>
+
+          <div id="loadingBadge"
+            class="hidden inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-sm text-slate-700">
+            <span class="h-2 w-2 rounded-full bg-slate-500 animate-pulse"></span>
+            Caricamento…
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!--
+      Layout principale della vista account.
+      La colonna laterale mostra il riepilogo sintetico del delegato,
+      mentre la colonna principale espone i dati dell’account e del profilo.
+    -->
+    <div class="mt-6 grid gap-6 lg:grid-cols-12">
+      <!--
+        Colonna laterale del profilo delegato.
+        Mostra avatar, nome visualizzato, email, stato del profilo,
+        identificativo utente e accesso alla sezione sicurezza.
+      -->
+      <section class="lg:col-span-4 rounded-2xl border bg-white p-6 shadow-sm">
+        <div class="flex items-start gap-4">
+          <div id="avatar"
+            class="h-12 w-12 rounded-2xl bg-slate-900 text-white flex items-center justify-center font-semibold">
+            —
+          </div>
+          <div class="min-w-0">
+            <div id="displayName" class="text-lg font-semibold truncate">—</div>
+            <div class="mt-1 text-sm text-slate-600 truncate" id="emailText">—</div>
+          </div>
+        </div>
+
+        <!--
+          Banner mostrato quando il profilo delegato non risulta disponibile
+          o non è stato possibile recuperare i dati anagrafici associati.
+        -->
+        <div id="profileMissingBanner" class="hidden mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-4">
+          <div class="text-sm font-semibold text-amber-900">Profilo delegato non disponibile</div>
+          <div class="mt-1 text-sm text-amber-800 leading-relaxed">
+            I dati anagrafici non risultano al momento recuperabili. L’account resta comunque utilizzabile per le
+            funzionalità consentite dalle deleghe attive.
+          </div>
+        </div>
+
+        <!-- Riquadri sintetici con identificativo utente, stato sessione e stato profilo -->
+        <div class="mt-5 grid gap-3 text-sm">
+          <div class="rounded-xl border bg-slate-50 px-4 py-3">
+            <div class="text-xs font-medium text-slate-500">Identificativo utente</div>
+            <div id="userIdText" class="mt-1 font-medium text-slate-900 break-words">—</div>
+          </div>
+
+          <div class="rounded-xl border bg-slate-50 px-4 py-3">
+            <div class="text-xs font-medium text-slate-500">Stato sessione</div>
+            <div id="sessionText" class="mt-1 font-medium text-slate-900">—</div>
+          </div>
+
+          <div class="rounded-xl border bg-slate-50 px-4 py-3">
+            <div class="text-xs font-medium text-slate-500">Stato profilo</div>
+            <div id="profileStatusText" class="mt-1 font-medium text-slate-900">—</div>
+          </div>
+        </div>
+
+        <!-- Sezione dedicata agli aspetti di sicurezza dell’account -->
+        <div class="mt-5 rounded-2xl border bg-white p-5">
+          <div class="text-sm font-semibold">Sicurezza</div>
+          <p class="mt-1 text-sm text-slate-600 leading-relaxed">
+            Per aggiornare la password, avvii la procedura di reimpostazione.
+          </p>
+          <div class="mt-4">
+            <a href="../auth/forgot-password.html"
+              class="h-10 inline-flex items-center justify-center rounded-xl border bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-100">
+              Reimposta password
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <!--
+        Sezione principale della pagina.
+        Contiene i dati account e profilo del delegato in sola consultazione.
+      -->
+      <section class="lg:col-span-8 rounded-2xl border bg-white p-6 sm:p-8 shadow-sm">
+        <div>
+          <h2 class="text-lg font-semibold">Dati account e profilo</h2>
+          <p class="mt-1 text-sm text-slate-600">
+            Informazioni dell’account autenticato e del profilo delegato associato.
+          </p>
+
+          <!--
+            Griglia principale dei dati account e profilo.
+            Include informazioni anagrafiche, contatti, ruolo applicativo
+            e numero di assistiti collegati tramite delega.
+          -->
+          <div class="mt-5 grid gap-4 sm:grid-cols-12">
+            <div class="sm:col-span-6">
+              <label class="text-sm font-medium text-slate-700" for="firstName">Nome</label>
+              <input id="firstName" type="text" readonly
+                class="mt-2 h-11 w-full rounded-xl border bg-slate-50 px-4 text-sm text-slate-700 focus:outline-none" />
+            </div>
+
+            <div class="sm:col-span-6">
+              <label class="text-sm font-medium text-slate-700" for="lastName">Cognome</label>
+              <input id="lastName" type="text" readonly
+                class="mt-2 h-11 w-full rounded-xl border bg-slate-50 px-4 text-sm text-slate-700 focus:outline-none" />
+            </div>
+
+            <div class="sm:col-span-6">
+              <label class="text-sm font-medium text-slate-700" for="phone">Telefono</label>
+              <input id="phone" type="text" readonly
+                class="mt-2 h-11 w-full rounded-xl border bg-slate-50 px-4 text-sm text-slate-700 focus:outline-none" />
+            </div>
+
+            <div class="sm:col-span-6">
+              <label class="text-sm font-medium text-slate-700" for="address">Indirizzo</label>
+              <input id="address" type="text" readonly
+                class="mt-2 h-11 w-full rounded-xl border bg-slate-50 px-4 text-sm text-slate-700 focus:outline-none" />
+            </div>
+
+            <div class="sm:col-span-12">
+              <label class="text-sm font-medium text-slate-700" for="email">Email</label>
+              <input id="email" type="email" autocomplete="email" readonly
+                class="mt-2 h-11 w-full rounded-xl border bg-slate-50 px-4 text-sm text-slate-700 focus:outline-none" />
+            </div>
+
+            <div class="sm:col-span-6">
+              <label class="text-sm font-medium text-slate-700" for="role">Ruolo</label>
+              <input id="role" type="text" readonly
+                class="mt-2 h-11 w-full rounded-xl border bg-slate-50 px-4 text-sm text-slate-700 focus:outline-none" />
+            </div>
+
+            <div class="sm:col-span-6">
+              <label class="text-sm font-medium text-slate-700" for="delegationsCount">Assistiti collegati</label>
+              <input id="delegationsCount" type="text" readonly
+                class="mt-2 h-11 w-full rounded-xl border bg-slate-50 px-4 text-sm text-slate-700 focus:outline-none" />
+            </div>
+          </div>
+
+          <!-- Riquadro informativo sul perimetro operativo regolato dalle deleghe -->
+          <div class="mt-6 rounded-2xl border bg-slate-50 p-5 text-sm text-slate-700 leading-relaxed">
+            L’accesso agli assistiti è regolato da deleghe con durata e permessi specifici.
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!--
+      Sezione dedicata all’elenco delle deleghe disponibili.
+      Comprende i filtri locali e la tabella delle deleghe associate all’account del delegato.
+    -->
+    <section class="mt-6 rounded-2xl border bg-white p-6 sm:p-8 shadow-sm">
+      <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
+        <div>
+          <h2 class="text-lg font-semibold">Deleghe</h2>
+          <p class="mt-1 text-sm text-slate-600">
+            Visualizzazione delle deleghe disponibili e accesso rapido alle aree dell’assistito.
+          </p>
+        </div>
+
+        <!--
+          Area dei filtri locali sulle deleghe.
+          Consente di mostrare solo le deleghe attive e di effettuare
+          una ricerca testuale su stato o permessi.
+        -->
+        <div class="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
+          <div class="h-10 inline-flex items-center rounded-xl border bg-white px-4 text-sm text-slate-700">
+            <input id="onlyActive" type="checkbox" class="h-4 w-4 rounded border-slate-300" />
+            <label for="onlyActive" class="ml-2 select-none">Solo attive</label>
+          </div>
+
+          <div class="relative w-full sm:w-[320px]">
+            <input id="searchInput" type="search" autocomplete="off" placeholder="Cerca per stato o permessi…"
+              class="h-10 w-full rounded-xl border bg-white px-4 text-sm focus:outline-none focus:ring-4 focus:ring-blue-100" />
+          </div>
+        </div>
+      </div>
+
+      <!--
+        Stato vuoto mostrato quando non risultano deleghe da mostrare.
+        Viene utilizzato sia in assenza completa di deleghe sia quando i filtri
+        correnti non producono alcun risultato visualizzabile.
+      -->
+      <div id="delegationsEmpty" class="hidden mt-6 rounded-2xl border bg-slate-50 p-6">
+        <div class="text-sm font-medium text-slate-800">Nessuna delega disponibile</div>
+        <div class="mt-1 text-sm text-slate-600">
+          Al momento non risultano deleghe associate al suo account.
+        </div>
+      </div>
+
+      <!--
+        Tabella delle deleghe del delegato.
+        Il corpo viene popolato dinamicamente lato client con le deleghe
+        disponibili e con le relative azioni operative.
+      -->
+      <div class="mt-6 overflow-x-auto">
+        <table class="min-w-full text-sm">
+          <thead>
+            <tr class="text-left text-xs text-slate-500 border-b">
+              <th class="py-3 pr-4 font-medium">Assistito</th>
+              <th class="py-3 pr-4 font-medium">Permessi</th>
+              <th class="py-3 pr-4 font-medium">Stato</th>
+              <th class="py-3 pr-4 font-medium">Validità</th>
+              <th class="py-3 text-right font-medium">Azioni</th>
+            </tr>
+          </thead>
+          <tbody id="delegationsTbody" class="divide-y">
+            <tr>
+              <td colspan="5" class="py-6 text-center text-slate-600">Caricamento in corso…</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Contenitore per errori globali della pagina mostrati lato client -->
+    <div id="pageError" class="hidden mt-6 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700"
+      role="alert" aria-live="polite"></div>
+  </main>
+
+  <!-- Placeholder dei componenti condivisi renderizzati dinamicamente lato client -->
+  <div data-component="footer"></div>
+  <div data-component="modal"></div>
+</body>
+
+</html>

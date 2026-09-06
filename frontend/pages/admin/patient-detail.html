@@ -1,0 +1,447 @@
+<!--
+  File: frontend/pages/admin/patient-detail.html
+
+  Scopo
+  -----
+  Definire la pagina amministrativa di dettaglio del paziente, consentendo
+  la visualizzazione e la gestione dell’anagrafica, dei consensi e delle
+  deleghe, oltre alla creazione iniziale della scheda quando previsto.
+
+  Ruolo nel sistema
+  -----------------
+  Questa pagina appartiene all’area Admin del portale e rappresenta il punto
+  operativo di consultazione e modifica della scheda di un singolo paziente.
+  Costituisce il nodo centrale per la gestione completa del profilo anagrafico
+  e degli elementi amministrativi collegati.
+
+  Note
+  ----
+  Il file contiene il markup strutturale della pagina e i placeholder DOM
+  utilizzati dagli script JavaScript associati. La logica di autenticazione,
+  bootstrap dei componenti condivisi, caricamento dati e salvataggio delle
+  modifiche è delegata ai moduli caricati in `../../js/common/` e
+  `../../js/admin/patient-detail.js`.
+-->
+
+<!doctype html>
+<html lang="it">
+
+<head>
+  <!-- Metadati di base del documento HTML -->
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Titolo mostrato nella scheda del browser -->
+  <title>Dettaglio paziente | Healthcare Portal</title>
+
+  <!-- Risorse statiche condivise della pagina -->
+  <link rel="icon" href="../../assets/favicon.ico" />
+  <link rel="stylesheet" href="../../css/styles.css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!--
+    Script condivisi e specifici della pagina.
+    Vengono caricati con `defer` per eseguire la logica applicativa
+    dopo il parsing completo del documento HTML.
+  -->
+  <script defer src="../../js/common/utils.js"></script>
+  <script defer src="../../js/common/session.js"></script>
+  <script defer src="../../js/common/auth.js"></script>
+  <script defer src="../../js/common/ui-components.js"></script>
+  <script defer src="../../js/admin/patient-detail.js"></script>
+</head>
+
+<body class="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
+  <!-- Placeholder del componente navbar condiviso, sostituito dinamicamente lato client -->
+  <div data-component="navbar"></div>
+
+  <!--
+    Contenuto principale della pagina di dettaglio paziente.
+    Comprende lo stato di richiesta non disponibile, la testata della scheda,
+    le sezioni account/anagrafica/deleghe/consensi ed eventuali errori globali.
+  -->
+  <main class="mx-auto w-full max-w-7xl px-4 py-8 flex-1">
+    <!--
+      Stato alternativo mostrato quando la scheda non può essere aperta
+      oppure quando il contesto richiesto non è disponibile.
+    -->
+    <section id="missingState" class="hidden rounded-2xl border bg-white p-6 sm:p-8 shadow-sm">
+      <div class="inline-flex items-center gap-2 rounded-full bg-red-50 px-3 py-1 text-sm text-red-700">
+        <span class="h-2 w-2 rounded-full bg-red-600"></span>
+        Richiesta non disponibile
+      </div>
+
+      <h1 class="mt-4 text-2xl sm:text-3xl font-semibold tracking-tight">Impossibile aprire la scheda</h1>
+
+      <p class="mt-2 text-slate-600 leading-relaxed">
+        La scheda richiesta non è al momento disponibile. Torni all’elenco dei pazienti e selezioni nuovamente il
+        profilo.
+      </p>
+
+      <!-- Azioni di recupero disponibili in caso di scheda non apribile -->
+      <div class="mt-6 flex flex-wrap gap-2">
+        <a href="./patients.html"
+          class="h-10 inline-flex items-center rounded-xl bg-blue-600 px-4 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-100">
+          Vai all’elenco pazienti
+        </a>
+
+        <a href="./dashboard.html"
+          class="h-10 inline-flex items-center rounded-xl border bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-100">
+          Dashboard
+        </a>
+      </div>
+    </section>
+
+    <!--
+      Sezione principale della scheda paziente.
+      Mostra intestazione, identificativi, azioni rapide e messaggi contestuali
+      relativi alla modalità corrente della pagina.
+    -->
+    <section id="mainContent" class="rounded-2xl border bg-white p-6 sm:p-8 shadow-sm">
+      <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
+        <div class="flex-1">
+          <div class="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-sm text-blue-700">
+            <span class="h-2 w-2 rounded-full bg-blue-600"></span>
+            Anagrafiche
+          </div>
+
+          <h1 class="mt-4 text-2xl sm:text-3xl font-semibold tracking-tight">
+            <span id="patientTitleName">Dettaglio paziente</span>
+          </h1>
+
+          <p class="mt-2 text-slate-600 leading-relaxed" id="patientSubtitle">
+            Visualizzazione e gestione delle informazioni principali, delle deleghe e dei consensi.
+          </p>
+        </div>
+
+        <!-- Pulsanti di navigazione e indicatore di caricamento contestuale -->
+        <div class="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
+          <a href="./patients.html"
+            class="h-10 inline-flex items-center justify-center rounded-xl border bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-100">
+            Elenco pazienti
+          </a>
+
+          <a href="./dashboard.html"
+            class="h-10 inline-flex items-center justify-center rounded-xl border bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-100">
+            Dashboard
+          </a>
+
+          <div id="loadingBadge"
+            class="hidden h-10 inline-flex items-center justify-center gap-2 rounded-xl bg-slate-100 px-4 text-sm text-slate-700">
+            <span class="h-2 w-2 rounded-full bg-slate-500 animate-pulse"></span>
+            Caricamento…
+          </div>
+        </div>
+      </div>
+
+      <!-- Area riepilogativa iniziale con identificativi, note di contesto e azioni di salvataggio -->
+      <div class="mt-6 grid gap-3 lg:grid-cols-12">
+        <div class="lg:col-span-7 rounded-2xl border bg-slate-50 p-5">
+          <div class="text-xs font-medium text-slate-500">Identificativi</div>
+
+          <div class="mt-3 grid gap-3 sm:grid-cols-2">
+            <div class="rounded-xl border bg-white px-4 py-3">
+              <div class="text-xs text-slate-500">Paziente</div>
+              <div class="mt-1">
+                <span id="patientUserId" class="text-sm font-semibold text-slate-900 break-all">—</span>
+              </div>
+            </div>
+
+            <div class="rounded-xl border bg-white px-4 py-3">
+              <div class="text-xs text-slate-500">Profilo</div>
+              <div class="mt-1">
+                <span id="patientProfileId" class="text-sm font-semibold text-slate-900 break-all">—</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Messaggio mostrato quando il profilo anagrafico non è ancora completo -->
+          <div id="profileHint" class="hidden mt-4 rounded-xl border bg-white px-4 py-3 text-sm text-slate-700">
+            Le informazioni anagrafiche non risultano ancora complete. È possibile inserirle e salvare la scheda.
+          </div>
+
+          <!-- Messaggio mostrato nella modalità di creazione iniziale del paziente -->
+          <div id="createModeNotice"
+            class="hidden mt-4 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800">
+            In questa modalità vengono raccolti sia i dati di accesso sia l’anagrafica del nuovo paziente. Deleghe e
+            consensi saranno gestibili dopo la creazione della scheda.
+          </div>
+        </div>
+
+        <div class="lg:col-span-5 rounded-2xl border bg-slate-50 p-5">
+          <div class="text-xs font-medium text-slate-500">Azioni rapide</div>
+
+          <div class="mt-3 grid gap-2">
+            <button id="btnSaveProfile" type="button"
+              class="h-11 inline-flex items-center justify-center rounded-xl bg-blue-600 px-4 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-100">
+              Salva anagrafica
+            </button>
+
+            <button id="btnSaveConsents" type="button"
+              class="h-11 inline-flex items-center justify-center rounded-xl border bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-100">
+              Salva consensi
+            </button>
+          </div>
+
+          <div id="saveInfoText"
+            class="mt-4 rounded-xl border bg-white px-4 py-3 text-xs text-slate-600 leading-relaxed">
+            Le modifiche vengono applicate solo dopo il salvataggio.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!--
+      Sezione dati di accesso.
+      È prevista principalmente per la modalità di creazione del nuovo paziente,
+      in cui vengono raccolte le credenziali iniziali dell’account.
+    -->
+    <section id="accountSection" class="hidden mt-6 rounded-2xl border bg-white p-6 sm:p-8 shadow-sm">
+      <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+        <div>
+          <h2 class="text-lg font-semibold">Dati di accesso</h2>
+          <p class="mt-1 text-sm text-slate-600">
+            Credenziali iniziali utilizzate per creare il nuovo account paziente.
+          </p>
+        </div>
+      </div>
+
+      <div class="mt-6 grid gap-4 lg:grid-cols-12">
+        <div class="lg:col-span-7">
+          <label class="text-sm font-medium text-slate-700" for="email">E-mail</label>
+          <input id="email" type="email" autocomplete="off"
+            class="mt-2 h-11 w-full rounded-xl border px-4 text-sm focus:outline-none focus:ring-4 focus:ring-blue-100"
+            placeholder="nome.cognome@example.com" />
+        </div>
+
+        <div class="lg:col-span-5">
+          <label class="text-sm font-medium text-slate-700" for="password">Password iniziale</label>
+          <input id="password" type="password" autocomplete="new-password"
+            class="mt-2 h-11 w-full rounded-xl border px-4 text-sm focus:outline-none focus:ring-4 focus:ring-blue-100"
+            placeholder="Almeno 8 caratteri" />
+        </div>
+      </div>
+    </section>
+
+    <!--
+      Sezione anagrafica del paziente.
+      Contiene i campi principali modificabili relativi ai dati personali e di contatto.
+    -->
+    <section id="sectionProfile" class="mt-6 rounded-2xl border bg-white p-6 sm:p-8 shadow-sm">
+      <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+        <div>
+          <h2 class="text-lg font-semibold">Anagrafica</h2>
+          <p class="mt-1 text-sm text-slate-600">
+            Aggiornamento dei dati principali del paziente.
+          </p>
+        </div>
+      </div>
+
+      <div class="mt-6 grid gap-4 lg:grid-cols-12">
+        <div class="lg:col-span-4">
+          <label class="text-sm font-medium text-slate-700" for="firstName">Nome</label>
+          <input id="firstName" type="text" autocomplete="off"
+            class="mt-2 h-11 w-full rounded-xl border px-4 text-sm focus:outline-none focus:ring-4 focus:ring-blue-100"
+            placeholder="Nome" />
+        </div>
+
+        <div class="lg:col-span-4">
+          <label class="text-sm font-medium text-slate-700" for="lastName">Cognome</label>
+          <input id="lastName" type="text" autocomplete="off"
+            class="mt-2 h-11 w-full rounded-xl border px-4 text-sm focus:outline-none focus:ring-4 focus:ring-blue-100"
+            placeholder="Cognome" />
+        </div>
+
+        <div class="lg:col-span-4">
+          <label class="text-sm font-medium text-slate-700" for="dateOfBirth">Data di nascita</label>
+          <input id="dateOfBirth" type="date"
+            class="mt-2 h-11 w-full rounded-xl border px-4 text-sm focus:outline-none focus:ring-4 focus:ring-blue-100" />
+        </div>
+
+        <div class="lg:col-span-5">
+          <label class="text-sm font-medium text-slate-700" for="phone">Telefono</label>
+          <input id="phone" type="tel" autocomplete="off"
+            class="mt-2 h-11 w-full rounded-xl border px-4 text-sm focus:outline-none focus:ring-4 focus:ring-blue-100"
+            placeholder="Telefono" />
+        </div>
+
+        <div class="lg:col-span-7">
+          <label class="text-sm font-medium text-slate-700" for="address">Indirizzo</label>
+          <input id="address" type="text" autocomplete="off"
+            class="mt-2 h-11 w-full rounded-xl border px-4 text-sm focus:outline-none focus:ring-4 focus:ring-blue-100"
+            placeholder="Indirizzo" />
+        </div>
+      </div>
+    </section>
+
+    <!--
+      Sezione deleghe.
+      Mostra l’elenco delle deleghe collegate al paziente e offre l’azione
+      per la creazione di una nuova delega.
+    -->
+    <section id="sectionDelegations" class="mt-6 rounded-2xl border bg-white p-6 sm:p-8 shadow-sm">
+      <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+        <div>
+          <h2 class="text-lg font-semibold">Deleghe</h2>
+          <p class="mt-1 text-sm text-slate-600">
+            Gestione delle deleghe attive e storiche del paziente.
+          </p>
+        </div>
+
+        <button id="btnNewDelegation" type="button"
+          class="h-10 inline-flex items-center justify-center rounded-xl bg-blue-600 px-4 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-100">
+          Nuova delega
+        </button>
+      </div>
+
+      <!-- Stato vuoto mostrato quando non esistono deleghe collegate -->
+      <div id="delegationsEmpty" class="hidden mt-6 rounded-2xl border bg-slate-50 p-6">
+        <div class="text-sm font-medium text-slate-800">Nessuna delega presente</div>
+        <div class="mt-1 text-sm text-slate-600">
+          È possibile aggiungere una nuova delega tramite l’apposito pulsante.
+        </div>
+      </div>
+
+      <!-- Tabella principale delle deleghe -->
+      <div class="mt-6 overflow-x-auto">
+        <table class="min-w-full text-sm">
+          <thead>
+            <tr class="text-left text-xs text-slate-500 border-b">
+              <th class="py-3 pr-4 font-medium">Delegato</th>
+              <th class="py-3 pr-4 font-medium">Ambito</th>
+              <th class="py-3 pr-4 font-medium">Validità</th>
+              <th class="py-3 pr-4 font-medium">Stato</th>
+              <th class="py-3 pr-4 font-medium">Creata</th>
+              <th class="py-3 text-right font-medium">Azioni</th>
+            </tr>
+          </thead>
+
+          <!-- Corpo tabella popolato dinamicamente -->
+          <tbody id="delegationsTbody" class="divide-y">
+            <tr>
+              <td colspan="6" class="py-6 text-center text-slate-600">Caricamento…</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!--
+      Sezione consensi.
+      Permette la consultazione e l’aggiornamento dei principali consensi associati al paziente.
+    -->
+    <section id="sectionConsents" class="mt-6 rounded-2xl border bg-white p-6 sm:p-8 shadow-sm">
+      <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+        <div>
+          <h2 class="text-lg font-semibold">Consensi</h2>
+          <p class="mt-1 text-sm text-slate-600">
+            Gestione dei consensi del paziente.
+          </p>
+        </div>
+      </div>
+
+      <div class="mt-6 grid gap-4 lg:grid-cols-12">
+        <!-- Card consenso al trattamento sanitario -->
+        <div class="lg:col-span-4 rounded-2xl border bg-slate-50 p-5">
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <div class="text-sm font-semibold text-slate-900">Trattamento sanitario</div>
+              <div class="mt-1 text-sm text-slate-600">Consenso alle attività di cura.</div>
+            </div>
+
+            <label class="inline-flex items-center cursor-pointer">
+              <span class="relative inline-flex items-center">
+                <input id="consentTreatment" type="checkbox" class="peer sr-only" />
+                <span
+                  class="block h-6 w-11 rounded-full border border-slate-300 bg-slate-200 transition-colors peer-checked:bg-blue-600 peer-checked:border-blue-600/60 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-100"></span>
+                <span
+                  class="pointer-events-none absolute left-1 top-1 h-4 w-4 rounded-full bg-white shadow-sm ring-1 ring-black/5 transition-transform peer-checked:translate-x-5"></span>
+              </span>
+            </label>
+          </div>
+
+          <label class="mt-4 block text-xs font-medium text-slate-500" for="notesTreatment">Note (opzionale)</label>
+          <textarea id="notesTreatment" rows="3"
+            class="mt-2 w-full rounded-xl border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-4 focus:ring-blue-100"
+            placeholder="Eventuali annotazioni…"></textarea>
+
+          <div class="mt-3 text-xs text-slate-500">
+            <span class="font-medium">Ultimo aggiornamento:</span>
+            <span id="metaTreatment">—</span>
+          </div>
+        </div>
+
+        <!-- Card consenso al trattamento dei dati personali -->
+        <div class="lg:col-span-4 rounded-2xl border bg-slate-50 p-5">
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <div class="text-sm font-semibold text-slate-900">Trattamento dati</div>
+              <div class="mt-1 text-sm text-slate-600">Consenso al trattamento dei dati personali.</div>
+            </div>
+
+            <label class="inline-flex items-center cursor-pointer">
+              <span class="relative inline-flex items-center">
+                <input id="consentDataProcessing" type="checkbox" class="peer sr-only" />
+                <span
+                  class="block h-6 w-11 rounded-full border border-slate-300 bg-slate-200 transition-colors peer-checked:bg-blue-600 peer-checked:border-blue-600/60 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-100"></span>
+                <span
+                  class="pointer-events-none absolute left-1 top-1 h-4 w-4 rounded-full bg-white shadow-sm ring-1 ring-black/5 transition-transform peer-checked:translate-x-5"></span>
+              </span>
+            </label>
+          </div>
+
+          <label class="mt-4 block text-xs font-medium text-slate-500" for="notesDataProcessing">Note
+            (opzionale)</label>
+          <textarea id="notesDataProcessing" rows="3"
+            class="mt-2 w-full rounded-xl border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-4 focus:ring-blue-100"
+            placeholder="Eventuali annotazioni…"></textarea>
+
+          <div class="mt-3 text-xs text-slate-500">
+            <span class="font-medium">Ultimo aggiornamento:</span>
+            <span id="metaDataProcessing">—</span>
+          </div>
+        </div>
+
+        <!-- Card consenso a comunicazioni informative o promozionali -->
+        <div class="lg:col-span-4 rounded-2xl border bg-slate-50 p-5">
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <div class="text-sm font-semibold text-slate-900">Comunicazioni</div>
+              <div class="mt-1 text-sm text-slate-600">Consenso a comunicazioni informative/promozionali.</div>
+            </div>
+
+            <label class="inline-flex items-center cursor-pointer">
+              <span class="relative inline-flex items-center">
+                <input id="consentMarketing" type="checkbox" class="peer sr-only" />
+                <span
+                  class="block h-6 w-11 rounded-full border border-slate-300 bg-slate-200 transition-colors peer-checked:bg-blue-600 peer-checked:border-blue-600/60 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-100"></span>
+                <span
+                  class="pointer-events-none absolute left-1 top-1 h-4 w-4 rounded-full bg-white shadow-sm ring-1 ring-black/5 transition-transform peer-checked:translate-x-5"></span>
+              </span>
+            </label>
+          </div>
+
+          <label class="mt-4 block text-xs font-medium text-slate-500" for="notesMarketing">Note (opzionale)</label>
+          <textarea id="notesMarketing" rows="3"
+            class="mt-2 w-full rounded-xl border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-4 focus:ring-blue-100"
+            placeholder="Eventuali annotazioni…"></textarea>
+
+          <div class="mt-3 text-xs text-slate-500">
+            <span class="font-medium">Ultimo aggiornamento:</span>
+            <span id="metaMarketing">—</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Contenitore dedicato a eventuali errori globali della pagina -->
+    <div id="pageError" class="hidden mt-6 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700"
+      role="alert" aria-live="polite"></div>
+  </main>
+
+  <!-- Placeholder dei componenti condivisi sostituiti dinamicamente lato client -->
+  <div data-component="footer"></div>
+  <div data-component="modal"></div>
+</body>
+
+</html>

@@ -1,0 +1,184 @@
+<!--
+  File: frontend/pages/admin/profile.html
+
+  Scopo
+  -----
+  Definire la pagina amministrativa dedicata alla consultazione del profilo
+  dell’account autenticato, mostrando le principali informazioni identificative
+  e un punto di accesso alle funzioni di sicurezza dell’utenza.
+
+  Ruolo nel sistema
+  -----------------
+  Questa pagina appartiene all’area Admin del portale e rappresenta la vista
+  personale dell’utente amministrativo autenticato. Consente di consultare
+  i dati essenziali dell’account, verificare lo stato della sessione attiva
+  e accedere alla procedura di reimpostazione della password.
+
+  Note
+  ----
+  Il file contiene il markup strutturale della pagina e i placeholder DOM
+  utilizzati dal relativo script JavaScript. La logica di autenticazione,
+  caricamento dei dati del profilo, aggiornamento dinamico dei campi e gestione
+  degli eventuali errori è demandata ai moduli caricati in `../../js/common/`
+  e in `../../js/admin/profile.js`.
+-->
+
+<!doctype html>
+<html lang="it">
+
+<head>
+  <!-- Metadati di base del documento HTML -->
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Titolo mostrato nella scheda del browser -->
+  <title>Profilo | Healthcare Portal</title>
+
+  <!-- Risorse statiche condivise della pagina -->
+  <link rel="icon" href="../../assets/favicon.ico" />
+  <link rel="stylesheet" href="../../css/styles.css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!--
+    Script condivisi e specifici della pagina.
+    Vengono caricati con `defer` per eseguire la logica applicativa
+    dopo il parsing completo del documento HTML.
+  -->
+  <script defer src="../../js/common/utils.js"></script>
+  <script defer src="../../js/common/session.js"></script>
+  <script defer src="../../js/common/auth.js"></script>
+  <script defer src="../../js/common/ui-components.js"></script>
+  <script defer src="../../js/admin/profile.js"></script>
+</head>
+
+<body class="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
+  <!-- Placeholder del componente navbar condiviso, sostituito dinamicamente lato client -->
+  <div data-component="navbar"></div>
+
+  <!--
+    Contenuto principale della pagina profilo.
+    Comprende l’intestazione della vista, il riepilogo sintetico dell’account,
+    la sezione sicurezza, il dettaglio dei dati account e l’eventuale messaggio
+    di errore globale.
+  -->
+  <main class="mx-auto w-full max-w-7xl px-4 py-8 flex-1">
+    <!--
+      Sezione introduttiva della pagina.
+      Presenta il contesto della vista profilo e include le azioni rapide
+      di navigazione verso la dashboard amministrativa.
+    -->
+    <section class="rounded-2xl border bg-white p-6 sm:p-8 shadow-sm">
+      <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
+        <div class="flex-1">
+          <div class="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-sm text-blue-700">
+            <span class="h-2 w-2 rounded-full bg-blue-600"></span>
+            Area amministrazione
+          </div>
+
+          <h1 class="mt-4 text-2xl sm:text-3xl font-semibold tracking-tight">Profilo</h1>
+
+          <p class="mt-2 text-slate-600 leading-relaxed">
+            Consultazione delle informazioni dell’account amministrativo.
+          </p>
+        </div>
+
+        <!-- Azione rapida verso la dashboard e indicatore di caricamento globale -->
+        <div class="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
+          <a href="./dashboard.html"
+            class="h-10 inline-flex items-center justify-center rounded-xl border bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-100">
+            Dashboard
+          </a>
+
+          <div id="loadingBadge"
+            class="hidden inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-sm text-slate-700">
+            <span class="h-2 w-2 rounded-full bg-slate-500 animate-pulse"></span>
+            Caricamento…
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!--
+      Layout principale della vista profilo.
+      La colonna sinistra contiene il riepilogo sintetico dell’account e le
+      azioni di sicurezza; la colonna destra contiene i dati account dettagliati.
+    -->
+    <div class="mt-6 grid gap-6 lg:grid-cols-12">
+      <!--
+        Colonna laterale del profilo.
+        Mostra avatar, ruolo, email, identificativo utente, stato della sessione
+        e accesso alla procedura di reimpostazione password.
+      -->
+      <section class="lg:col-span-4 rounded-2xl border bg-white p-6 shadow-sm">
+        <div class="flex items-start gap-4">
+          <div id="avatar"
+            class="h-12 w-12 rounded-2xl bg-slate-900 text-white flex items-center justify-center font-semibold">
+            —
+          </div>
+          <div class="min-w-0">
+            <div id="roleText" class="text-lg font-semibold truncate">Admin</div>
+            <div class="mt-1 text-sm text-slate-600 truncate" id="emailText">—</div>
+          </div>
+        </div>
+
+        <!-- Riquadri sintetici con dati principali dell’account autenticato -->
+        <div class="mt-5 grid gap-3 text-sm">
+          <div class="rounded-xl border bg-slate-50 px-4 py-3">
+            <div class="text-xs font-medium text-slate-500">Identificativo utente</div>
+            <div id="userIdText" class="mt-1 font-medium text-slate-900 break-words">—</div>
+          </div>
+
+          <div class="rounded-xl border bg-slate-50 px-4 py-3">
+            <div class="text-xs font-medium text-slate-500">Stato sessione</div>
+            <div id="sessionText" class="mt-1 font-medium text-slate-900">—</div>
+          </div>
+        </div>
+
+        <!-- Sezione dedicata agli aspetti di sicurezza dell’account -->
+        <div class="mt-5 rounded-2xl border bg-white p-5">
+          <div class="text-sm font-semibold">Sicurezza</div>
+          <p class="mt-1 text-sm text-slate-600 leading-relaxed">
+            Per aggiornare la password, avvii la procedura di reimpostazione.
+          </p>
+          <div class="mt-4">
+            <a href="../auth/forgot-password.html"
+              class="h-10 inline-flex items-center justify-center rounded-xl border bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-100">
+              Reimposta password
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <!--
+        Sezione principale dei dati account.
+        Mostra le informazioni dell’utente autenticato in forma consultiva,
+        senza permettere modifiche dirette da questa vista.
+      -->
+      <section class="lg:col-span-8 rounded-2xl border bg-white p-6 sm:p-8 shadow-sm">
+        <div>
+          <h2 class="text-lg font-semibold">Dati account</h2>
+          <p class="mt-1 text-sm text-slate-600">Informazioni dell’account attualmente autenticato.</p>
+
+          <!-- Campo di sola lettura valorizzato dinamicamente dal modulo JavaScript di pagina -->
+          <div class="mt-5 grid gap-4 sm:grid-cols-12">
+            <div class="sm:col-span-12">
+              <label class="text-sm font-medium text-slate-700" for="email">Email</label>
+              <input id="email" type="email" autocomplete="email" readonly
+                class="mt-2 h-11 w-full rounded-xl border bg-slate-50 px-4 text-sm text-slate-700 focus:outline-none" />
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- Contenitore per errori globali della pagina mostrati lato client -->
+    <div id="pageError" class="hidden mt-6 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700"
+      role="alert" aria-live="polite"></div>
+  </main>
+
+  <!-- Placeholder dei componenti condivisi renderizzati dinamicamente lato client -->
+  <div data-component="footer"></div>
+  <div data-component="modal"></div>
+</body>
+
+</html>

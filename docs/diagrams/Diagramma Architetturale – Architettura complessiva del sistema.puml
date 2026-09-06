@@ -1,0 +1,286 @@
+' File: docs/architectural_diagram.puml
+'
+' Scopo:
+' Rappresentare in modo sintetico ma completo l'architettura complessiva
+' del sistema, evidenziando i principali attori, i container runtime,
+' i livelli architetturali, i servizi applicativi e le interazioni tra essi.
+'
+' Ruolo nel sistema:
+' Questo diagramma fornisce una vista ad alto livello dell'intera piattaforma
+' ed è utile per comprendere come i diversi componenti collaborano tra loro
+' all'interno dell'ambiente orchestrato con Docker Compose.
+'
+' Note:
+' - Il diagramma adotta una rappresentazione per livelli architetturali.
+' - I flussi mostrano sia le chiamate principali sia alcune dipendenze
+'   trasversali, come health check, introspection e invio email.
+' - La vista è focalizzata sull'architettura logica/runtime e non sul dettaglio
+'   implementativo interno dei singoli moduli.
+
+@startuml
+title Diagramma Architetturale – Architettura complessiva del sistema
+
+' Imposta l'orientamento generale del diagramma da sinistra verso destra,
+' così da rendere più leggibile il flusso tra attori, frontend, gateway,
+' servizi applicativi e risorse dati.
+left to right direction
+
+' Configurazioni grafiche globali per ottenere uno stile pulito,
+' professionale e uniforme in tutti gli elementi del diagramma.
+skinparam shadowing false
+skinparam linetype ortho
+skinparam packageStyle rectangle
+skinparam componentStyle rectangle
+skinparam defaultTextAlignment center
+
+' Palette cromatica dedicata alle varie tipologie di elementi:
+' frecce, package, componenti, nodi, database, cloud, cartelle e note.
+skinparam ArrowColor #475569
+skinparam PackageBorderColor #94A3B8
+skinparam PackageBackgroundColor #F8FAFC
+skinparam ComponentBorderColor #475569
+skinparam ComponentBackgroundColor #FFFFFF
+skinparam NodeBorderColor #1D4ED8
+skinparam NodeBackgroundColor #EFF6FF
+skinparam DatabaseBorderColor #9A3412
+skinparam DatabaseBackgroundColor #FFF7ED
+skinparam CloudBorderColor #7C3AED
+skinparam CloudBackgroundColor #F5F3FF
+skinparam FolderBorderColor #0F766E
+skinparam FolderBackgroundColor #ECFEFF
+skinparam NoteBorderColor #94A3B8
+skinparam NoteBackgroundColor #FFFBEB
+
+' Attori principali del sistema, corrispondenti ai ruoli utente
+' che interagiscono con il frontend multi-page.
+actor "Admin" as Admin
+actor "Clinician" as Clinician
+actor "Patient" as Patient
+actor "Delegate" as Delegate
+
+' Contenitore principale che rappresenta l'ambiente di esecuzione
+' orchestrato da Docker Compose.
+frame "Docker Compose Orchestration" as Compose {
+  note top of Compose
+    The whole application stack is deployed and orchestrated
+    through Docker Compose.
+    Each runtime component is executed as a dedicated container
+    within the same composed environment.
+  end note
+
+  ' Livello di presentazione: ospita il frontend statico e il proxy Nginx
+  ' utilizzato dal browser come punto di accesso alle API.
+  package "Presentation Tier" {
+    node "Frontend Container\nNginx + Static Multi-Page App\nPort 8080 -> 80" as Frontend {
+      component "Web UI\nHTML + CSS + Tailwind + JavaScript\nrole-specific pages and scripts" as FE_UI
+      component "Nginx API Proxy\nlocation /api/* -> api-gateway:8000" as FE_Proxy
+    }
+  }
+
+  ' Livello di integrazione e sicurezza: ospita il gateway,
+  ' che centralizza routing e responsabilità trasversali.
+  package "Integration & Security Tier" {
+    node "API Gateway Container\nGo + Gin\nPort 8000" as Gateway {
+      component "Proxy Router + Reverse Proxy Dispatch\nsingle catch-all /api/*path" as GW_Router
+      component "Security & Cross-Cutting\nJWT verify\nCORS\nRate limiting\nRequest ID\nStructured logging\nRecovery JSON" as GW_Middleware
+      component "Aggregated Health\n/api/health" as GW_Health
+    }
+
+    note right of Gateway
+      Dispatching logic implemented in the gateway:
+      - /api/health handled locally
+      - /api/ai/* proxied to AI Assistant
+        after stripping the /ai prefix
+      - all other /api/* requests proxied to Core Service
+    end note
+  }
+
+  ' Livello dei servizi applicativi: contiene il backend principale
+  ' e il modulo AI separato, ciascuno con responsabilità ben distinte.
+  package "Application Services Tier" {
+    node "Core Service Container\nASP.NET Core 8\nPort 5000 -> 8080" as Core {
+      ' Sottosistema di autenticazione e identità:
+      ' gestisce login, registrazione, attivazione, reset e introspection.
+      component "Auth & Identity\nlogin / logout / me\npatient + delegate registration\naccount activation\npassword reset\ntoken introspection" as CS_Auth
+
+      ' Dominio Registry:
+      ' gestisce anagrafiche, profili, deleghe e consensi.
+      component "Registry\npatients / delegates / clinicians\nprofiles / delegations / consents" as CS_Registry
+
+      ' Dominio Scheduling:
+      ' gestisce disponibilità, slot, appuntamenti e stati operativi correlati.
+      component "Scheduling\navailability / slots / appointments\ncancel / reschedule\ncheck-in / no-show" as CS_Scheduling
+
+      ' Dominio Clinical:
+      ' gestisce catalogo, pre-triage, encounter, dati clinici e referti.
+      component "Clinical\ncatalog / pre-triage / encounters\nanamneses / vital signs\norders / executions / reports" as CS_Clinical
+
+      ' Dominio Payments:
+      ' gestisce intenti di pagamento, transazioni, checkout e webhook simulati.
+      component "Payments\npayment intents / transactions\ncheckout / in-person / reconcile\nsimulated provider webhook" as CS_Payments
+
+      ' Dominio Events:
+      ' gestisce notifiche applicative, audit e pianificazione delle comunicazioni.
+      component "Events\nnotifications / audit\nnotification scheduler" as CS_Events
+
+      ' Componente infrastrutturale per l'invio effettivo delle email
+      ' basato su BackgroundService e SMTP.
+      component "Email Dispatcher\nBackgroundService + SMTP\nscheduled email delivery" as CS_Email
+
+      ' Endpoint di health del Core Service usato per controlli locali
+      ' e health aggregata dal gateway.
+      component "Health Probe\n/health" as CS_Health
+    }
+
+    note right of Core
+      Solution structure present in repository:
+      - CoreService.Api
+      - CoreService.Application
+      - CoreService.Domain
+      - CoreService.Infrastructure
+    end note
+
+    node "AI Assistant Container\nDjango + DRF\nPort 8001 -> 8000" as AI {
+      ' API consultiva destinata al solo personale clinico.
+      component "Clinician QA API\n/clinicians/qa" as AI_QA
+
+      ' Autenticazione dell'AI Assistant:
+      ' verifica firma, issuer, ruolo clinico e introspection sul core.
+      component "Core JWT Authentication\nsignature + issuer validation\nrole check: Clinician\ncore token introspection" as AI_Auth
+
+      ' Pre-processing di sicurezza:
+      ' supporta estrazione testo da allegati e rilevazione PII.
+      component "Safety & Input Processing\nattachment text extraction\nPII detection" as AI_Safety
+
+      ' Inferenza locale con modello Hugging Face / Transformers
+      ' con caricamento lazy e senza persistenza proprietaria.
+      component "Local LLM Inference\nTransformers client\nlazy model loading\nstateless (no DB)" as AI_LLM
+
+      ' Endpoint di health del servizio AI.
+      component "Health Endpoint\n/health" as AI_Health
+    }
+
+    note right of AI
+      The AI service is effectively stateless:
+      Django DATABASES uses the dummy backend,
+      so no local persistence is owned by this service.
+    end note
+  }
+
+  ' Livello dati e servizi di supporto:
+  ' contiene il database condiviso, il sink email e la cache dei modelli AI.
+  package "Data & Supporting Services" {
+    node "MySQL 8.0 Container\nsingle instance / schema-per-domain\nPort 3306" as MySQL {
+      ' Database logici separati per dominio, in coerenza con la suddivisione
+      ' architetturale adottata dal Core Service.
+      database "healthcare_registry" as DB_Registry
+      database "healthcare_scheduling" as DB_Scheduling
+      database "healthcare_clinical" as DB_Clinical
+      database "healthcare_payments" as DB_Payments
+      database "healthcare_events" as DB_Events
+    }
+
+    ' Servizio di mail testing usato come SMTP sink e interfaccia web
+    ' per ispezionare i messaggi generati in ambiente locale.
+    cloud "Mailpit Container\nSMTP sink + web UI\nPort 8025" as Mailpit
+
+    ' Cache locale montata in sola lettura nel container AI
+    ' per evitare download runtime dei modelli e degli asset correlati.
+    folder "hf_cache\nread-only Hugging Face cache\nmounted into ai-assistant" as HFCache
+  }
+}
+
+note bottom of Frontend
+  The browser talks only to the frontend origin.
+  Nginx serves static assets and forwards /api/* to the Go gateway.
+end note
+
+' Gli attori interagiscono con la Web UI in base al proprio ruolo applicativo.
+Admin --> FE_UI : uses admin pages
+Clinician --> FE_UI : uses clinician pages
+Patient --> FE_UI : uses patient pages
+Delegate --> FE_UI : uses delegate pages
+
+' Il frontend utilizza chiamate fetch/XHR verso il proxy Nginx,
+' che a sua volta inoltra le richieste API al gateway.
+FE_UI --> FE_Proxy : fetch / XHR on /api/*
+FE_Proxy --> GW_Router : proxied HTTP calls
+
+' Routing principale del gateway verso i moduli del Core Service.
+GW_Router --> CS_Auth : /api/auth/*\n+ /api/me
+GW_Router --> CS_Registry : /api/registry/*
+GW_Router --> CS_Scheduling : /api/scheduling/*
+GW_Router --> CS_Clinical : /api/catalog/*\n/api/clinical/*
+GW_Router --> CS_Payments : /api/payments/*
+GW_Router --> CS_Events : /api/notifications/*\n/api/events/admin/audit
+
+' Routing dedicato al modulo AI con stripping del prefisso /api/ai.
+GW_Router --> AI_QA : /api/ai/clinicians/qa\n(prefix /api/ai stripped)
+
+' Il middleware del gateway usa l'introspection del Core Service
+' per validare richieste protette e contesto autenticato.
+GW_Middleware ..> CS_Auth : token introspection\nfor protected requests
+
+' Health aggregata del gateway costruita interrogando i servizi applicativi.
+GW_Health --> CS_Health : probes core /health
+GW_Health --> AI_Health : probes ai /health
+
+' Flusso interno del modulo AI:
+' autenticazione, pre-processing di sicurezza e generazione della risposta.
+AI_QA --> AI_Auth : authenticate request
+AI_QA --> AI_Safety : preprocess inputs
+AI_QA --> AI_LLM : generate answer
+
+' Anche il modulo AI si appoggia al Core Service per l'introspection del token.
+AI_Auth ..> CS_Auth : token introspection
+
+' L'inferenza locale utilizza gli asset presenti nella cache Hugging Face.
+AI_LLM --> HFCache : load tokenizer/model\n(local files only)
+
+' Interazioni applicative interne tra domini del Core Service:
+' scheduling e pagamenti generano eventi/notifiche.
+CS_Scheduling ..> CS_Events : booking / cancel / reschedule\nnotifications
+CS_Payments ..> CS_Events : payment notifications
+
+' Il dominio Events delega l'invio effettivo delle comunicazioni email
+' al dispatcher infrastrutturale.
+CS_Events ..> CS_Email : dispatch due email notifications
+
+' Accessi al database da parte del dominio Auth e Registry.
+CS_Auth --> DB_Registry : users / activation / reset\nrevoked tokens
+CS_Registry --> DB_Registry : profiles / delegations / consents
+
+' Persistenza del dominio Scheduling.
+CS_Scheduling --> DB_Scheduling : slots / appointments / calendars
+
+' Persistenza del dominio Clinical e accesso al contesto appuntamento
+' necessario per i controlli di ownership/visibilità.
+CS_Clinical --> DB_Clinical : catalog / pre-triage\nencounters / reports
+CS_Clinical --> DB_Scheduling : appointment context\nownership checks
+
+' Persistenza del dominio Payments e recupero del contesto appuntamento.
+CS_Payments --> DB_Payments : intents / transactions
+CS_Payments --> DB_Scheduling : appointment lookup\npayment context
+
+' Persistenza del dominio Events.
+CS_Events --> DB_Events : notifications / audit log
+
+' Il dispatcher email legge le notifiche dovute dal dominio Events
+' e recupera gli indirizzi destinatari dal dominio Registry.
+CS_Email --> DB_Events : poll due EMAIL notifications
+CS_Email --> DB_Registry : resolve recipient email addresses
+
+' Il probe di health del Core Service verifica la raggiungibilità
+' di tutti i database logici necessari al funzionamento del backend.
+CS_Health --> DB_Registry : probe
+CS_Health --> DB_Scheduling : probe
+CS_Health --> DB_Clinical : probe
+CS_Health --> DB_Payments : probe
+CS_Health --> DB_Events : probe
+
+' Invio email SMTP verso Mailpit per scenari di sviluppo/test:
+' attivazione account, reset password e notifiche pianificate.
+CS_Auth --> Mailpit : SMTP\nactivation / password reset emails
+CS_Email --> Mailpit : SMTP\nscheduled notification emails
+
+@enduml

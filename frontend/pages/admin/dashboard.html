@@ -1,0 +1,207 @@
+<!--
+  File: frontend/pages/admin/dashboard.html
+
+  Scopo
+  -----
+  Definire la dashboard principale dell’area amministrativa, offrendo una vista
+  sintetica delle principali informazioni operative e scorciatoie verso le funzioni
+  più rilevanti del profilo Admin.
+
+  Ruolo nel sistema
+  -----------------
+  Questa pagina rappresenta il punto di ingresso dell’utente amministrativo dopo
+  l’autenticazione. Fornisce una panoramica iniziale sullo stato operativo del
+  sistema e integra componenti comuni e script specifici per il caricamento dei
+  KPI, delle attività recenti e delle azioni rapide.
+
+  Note
+  ----
+  Il file contiene il markup strutturale della dashboard e i placeholder DOM
+  utilizzati dagli script JavaScript associati. La logica di autenticazione,
+  bootstrap dei componenti condivisi e caricamento dei dati è delegata ai moduli
+  caricati in `../../js/common/` e `../../js/admin/dashboard.js`.
+-->
+
+<!doctype html>
+<html lang="it">
+
+<head>
+  <!-- Metadati di base del documento HTML -->
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Titolo mostrato nella scheda del browser -->
+  <title>Dashboard Admin | Healthcare Portal</title>
+
+  <!-- Risorse statiche condivise della pagina -->
+  <link rel="icon" href="../../assets/favicon.ico" />
+  <link rel="stylesheet" href="../../css/styles.css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!--
+    Script condivisi e specifici della pagina.
+    Vengono caricati con `defer` per eseguire la logica applicativa
+    dopo il parsing completo del documento HTML.
+  -->
+  <script defer src="../../js/common/utils.js"></script>
+  <script defer src="../../js/common/session.js"></script>
+  <script defer src="../../js/common/auth.js"></script>
+  <script defer src="../../js/common/ui-components.js"></script>
+  <script defer src="../../js/admin/dashboard.js"></script>
+</head>
+
+<body class="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
+  <!-- Placeholder del componente navbar condiviso, sostituito dinamicamente lato client -->
+  <div data-component="navbar"></div>
+
+  <!--
+    Contenuto principale della dashboard amministrativa.
+    Raccoglie presentazione iniziale, KPI, riepilogo attività recenti,
+    azioni rapide ed eventuale contenitore errori di pagina.
+  -->
+  <main class="mx-auto max-w-7xl px-4 py-8 flex-1">
+    <!--
+      Sezione hero della dashboard.
+      Introduce il contesto operativo dell’area Admin e offre due scorciatoie
+      immediate verso catalogo prestazioni e gestione pagamenti.
+    -->
+    <section class="rounded-2xl border bg-white p-6 sm:p-8 shadow-sm">
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+          <div class="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-sm text-blue-700">
+            <span class="h-2 w-2 rounded-full bg-blue-600"></span>
+            Centro di controllo
+          </div>
+          <h1 class="mt-4 text-2xl sm:text-3xl font-semibold tracking-tight">Panoramica operativa</h1>
+          <p class="mt-2 text-slate-600 leading-relaxed">
+            Gestisci catalogo prestazioni, pagamenti, audit e comunicazioni. La dashboard riassume le attività recenti
+            e fornisce accesso rapido alle funzioni principali.
+          </p>
+        </div>
+
+        <!-- Collegamenti rapidi alle aree amministrative più utilizzate -->
+        <div class="grid grid-cols-2 gap-3 w-full md:w-auto">
+          <a href="./services.html" class="rounded-2xl border bg-white p-4 hover:bg-slate-50"
+            aria-label="Vai alla gestione delle prestazioni">
+            <div class="text-xs text-slate-500">Catalogo</div>
+            <div class="mt-1 font-semibold">Prestazioni</div>
+            <div class="mt-2 text-xs text-slate-600">crea, aggiorna, disattiva</div>
+          </a>
+          <a href="./payments.html" class="rounded-2xl border bg-white p-4 hover:bg-slate-50"
+            aria-label="Vai alla gestione dei pagamenti">
+            <div class="text-xs text-slate-500">Contabilità</div>
+            <div class="mt-1 font-semibold">Pagamenti</div>
+            <div class="mt-2 text-xs text-slate-600">verifica e riconcilia</div>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!--
+      Sezione KPI.
+      Contiene i principali indicatori sintetici caricati dinamicamente
+      dallo script della pagina.
+    -->
+    <section class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div class="rounded-2xl border bg-white p-5 shadow-sm">
+        <div class="text-sm text-slate-600">Prestazioni (totali)</div>
+        <div class="mt-2 flex items-end justify-between">
+          <div id="kpiServices" class="text-3xl font-semibold">—</div>
+          <div class="text-xs text-slate-500">catalogo</div>
+        </div>
+        <div class="mt-3 text-xs text-slate-500">incluse eventuali non attive</div>
+      </div>
+
+      <div class="rounded-2xl border bg-white p-5 shadow-sm">
+        <div class="text-sm text-slate-600">Pagamenti da gestire</div>
+        <div class="mt-2 flex items-end justify-between">
+          <div id="kpiPayments" class="text-3xl font-semibold">—</div>
+          <div class="text-xs text-slate-500">pratiche</div>
+        </div>
+        <div class="mt-3 text-xs text-slate-500">verifica e completamento</div>
+      </div>
+
+      <div class="rounded-2xl border bg-white p-5 shadow-sm">
+        <div class="text-sm text-slate-600">Notifiche in preparazione</div>
+        <div class="mt-2 flex items-end justify-between">
+          <div id="kpiNotifications" class="text-3xl font-semibold">—</div>
+          <div class="text-xs text-slate-500">messaggi</div>
+        </div>
+        <div class="mt-3 text-xs text-slate-500">da inviare o da rivedere</div>
+      </div>
+
+      <div class="rounded-2xl border bg-white p-5 shadow-sm">
+        <div class="text-sm text-slate-600">Incassi confermati (30 giorni)</div>
+        <div class="mt-2 flex items-end justify-between">
+          <div id="kpiRevenue" class="text-3xl font-semibold">—</div>
+          <div class="text-xs text-slate-500">totale</div>
+        </div>
+        <div class="mt-3 text-xs text-slate-500">importi già confermati</div>
+      </div>
+    </section>
+
+    <!--
+      Sezione centrale della dashboard.
+      A sinistra mostra il riepilogo delle attività recenti, a destra
+      una sidebar con le principali azioni rapide.
+    -->
+    <section class="mt-6 grid lg:grid-cols-3 gap-4">
+      <div class="lg:col-span-2 rounded-2xl border bg-white p-6 shadow-sm">
+        <div class="flex items-start justify-between gap-4">
+          <div>
+            <h2 class="text-lg font-semibold">Attività recenti</h2>
+            <p class="mt-1 text-sm text-slate-600">Riepilogo sintetico degli ultimi 30 giorni.</p>
+          </div>
+          <a class="text-sm text-blue-700 hover:text-blue-900" href="./notifications.html">Vedi notifiche</a>
+        </div>
+
+        <!-- Blocchi riassuntivi alimentati dinamicamente dai dati recenti -->
+        <div class="mt-5 grid gap-3">
+          <div class="rounded-xl border bg-slate-50 px-4 py-3">
+            <div class="text-xs text-slate-500">Notifiche</div>
+            <div id="recentNotifications" class="mt-1 text-sm text-slate-700 whitespace-pre-line">Caricamento…</div>
+          </div>
+          <div class="rounded-xl border bg-slate-50 px-4 py-3">
+            <div class="text-xs text-slate-500">Pagamenti</div>
+            <div id="recentPayments" class="mt-1 text-sm text-slate-700 whitespace-pre-line">Caricamento…</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sidebar con collegamenti diretti alle operazioni amministrative più frequenti -->
+      <aside class="rounded-2xl border bg-white p-6 shadow-sm">
+        <h2 class="text-lg font-semibold">Azioni rapide</h2>
+        <p class="mt-1 text-sm text-slate-600">Scorciatoie verso le funzioni più frequenti.</p>
+
+        <div class="mt-5 grid gap-2">
+          <a class="rounded-xl border px-4 py-3 hover:bg-slate-50" href="./appointments.html">
+            <div class="font-medium">Gestisci appuntamenti</div>
+            <div class="text-xs text-slate-500">liste, dettagli e operazioni</div>
+          </a>
+          <a class="rounded-xl border px-4 py-3 hover:bg-slate-50" href="./check-in.html">
+            <div class="font-medium">Esegui check-in</div>
+            <div class="text-xs text-slate-500">accoglienza e avanzamento stato</div>
+          </a>
+          <a class="rounded-xl border px-4 py-3 hover:bg-slate-50" href="./services.html">
+            <div class="font-medium">Aggiorna catalogo</div>
+            <div class="text-xs text-slate-500">prestazioni e disponibilità</div>
+          </a>
+          <a class="rounded-xl border px-4 py-3 hover:bg-slate-50" href="./audit.html">
+            <div class="font-medium">Consulta attività</div>
+            <div class="text-xs text-slate-500">tracciabilità operativa del sistema</div>
+          </a>
+        </div>
+      </aside>
+    </section>
+
+    <!-- Contenitore dedicato a eventuali errori di caricamento della pagina -->
+    <div id="pageError" class="hidden mt-6 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700"
+      role="alert" aria-live="polite"></div>
+  </main>
+
+  <!-- Placeholder dei componenti condivisi sostituiti dinamicamente lato client -->
+  <div data-component="footer"></div>
+  <div data-component="modal"></div>
+</body>
+
+</html>

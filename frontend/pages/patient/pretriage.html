@@ -1,0 +1,373 @@
+<!--
+  File: frontend/pages/patient/pretriage.html
+
+  Scopo
+  -----
+  Definire la pagina dell’area Patient dedicata alla compilazione e
+  all’aggiornamento del questionario di pre-triage associato a uno specifico
+  appuntamento, consentendo al paziente di fornire informazioni preliminari
+  utili al professionista sanitario prima della visita.
+
+  Ruolo nel sistema
+  -----------------
+  Questa pagina appartiene all’area Patient del portale e rappresenta la
+  vista attraverso cui il paziente può consultare il contesto
+  dell’appuntamento e inserire i dati preliminari della pre-visita.
+  Le informazioni raccolte supportano il professionista sanitario nella
+  valutazione iniziale del caso e contribuiscono a rendere più efficace
+  l’incontro clinico.
+
+  Note
+  ----
+  Il file contiene il markup strutturale della pagina e i placeholder DOM
+  utilizzati dal relativo script JavaScript. La logica di autenticazione,
+  caricamento dell’appuntamento, popolamento del questionario, validazione
+  dei campi, salvataggio delle modifiche, gestione dello stato bloccato
+  e trattamento degli errori è demandata ai moduli caricati in
+  `../../js/common/` e in `../../js/patient/pretriage.js`.
+-->
+
+<!doctype html>
+<html lang="it">
+
+<head>
+  <!-- Metadati di base del documento HTML -->
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Titolo mostrato nella scheda del browser -->
+  <title>Pre-triage | Healthcare Portal</title>
+
+  <!-- Risorse statiche condivise della pagina -->
+  <link rel="icon" href="../../assets/favicon.ico" />
+  <link rel="stylesheet" href="../../css/styles.css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!--
+    Script condivisi e specifici della pagina.
+    Vengono caricati con `defer` per eseguire la logica applicativa
+    dopo il parsing completo del documento HTML.
+  -->
+  <script defer src="../../js/common/utils.js"></script>
+  <script defer src="../../js/common/session.js"></script>
+  <script defer src="../../js/common/auth.js"></script>
+  <script defer src="../../js/common/ui-components.js"></script>
+  <script defer src="../../js/patient/pretriage.js"></script>
+</head>
+
+<body class="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
+  <!-- Placeholder del componente navbar condiviso, sostituito dinamicamente lato client -->
+  <div data-component="navbar"></div>
+
+  <!--
+    Contenuto principale della pagina pre-triage.
+    Comprende l’intestazione della vista, il riepilogo sintetico
+    dell’appuntamento, il questionario di pre-visita, il pannello laterale
+    informativo e il contenitore per eventuali errori globali.
+  -->
+  <main class="mx-auto w-full max-w-7xl px-4 py-8 flex-1">
+    <!--
+      Sezione introduttiva della pagina.
+      Presenta il contesto della pre-visita e include i collegamenti rapidi
+      verso il dettaglio dell’appuntamento e la dashboard del paziente.
+    -->
+    <section class="rounded-2xl border bg-white p-6 sm:p-8 shadow-sm">
+      <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
+        <div class="flex-1">
+          <div class="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-sm text-blue-700">
+            <span class="h-2 w-2 rounded-full bg-blue-600"></span>
+            Pre-visita
+          </div>
+
+          <h1 class="mt-4 text-2xl sm:text-3xl font-semibold tracking-tight">Pre-triage</h1>
+
+          <p class="mt-2 text-slate-600 leading-relaxed">
+            Compili queste informazioni prima della visita. Aiuteranno il professionista a inquadrare meglio la
+            situazione
+            e a rendere più efficace l’incontro.
+          </p>
+        </div>
+
+        <!-- Azioni rapide verso il dettaglio appuntamento e la dashboard -->
+        <div class="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
+          <a id="btnBackToDetail" href="./appointment-detail.html"
+            class="h-10 inline-flex items-center justify-center rounded-xl border bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-100">
+            Dettaglio appuntamento
+          </a>
+          <a href="./dashboard.html"
+            class="h-10 inline-flex items-center justify-center rounded-xl border bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-100">
+            Dashboard
+          </a>
+        </div>
+      </div>
+
+      <!-- Riga informativa con riferimento appuntamento e indicatore di caricamento globale -->
+      <div class="mt-6 flex items-center justify-between gap-3">
+        <div class="text-sm text-slate-600">
+          Riferimento: <span id="apptRef" class="font-medium text-slate-800">—</span>
+        </div>
+
+        <div id="loadingBadge"
+          class="hidden inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-sm text-slate-700">
+          <span class="h-2 w-2 rounded-full bg-slate-500 animate-pulse"></span>
+          Caricamento…
+        </div>
+      </div>
+    </section>
+
+    <!--
+      Layout principale della vista pre-triage.
+      La colonna principale contiene il riepilogo dell’appuntamento
+      e il questionario; la colonna laterale ospita suggerimenti
+      operativi e l’eventuale stato di blocco delle modifiche.
+    -->
+    <section class="mt-6 grid gap-4 lg:grid-cols-3">
+      <div class="lg:col-span-2 grid gap-4">
+        <!--
+          Riquadro di riepilogo dell’appuntamento.
+          Mostra la prestazione prenotata, la pianificazione, lo stato corrente
+          e l’ultimo aggiornamento disponibile del pre-triage.
+        -->
+        <section class="rounded-2xl border bg-white p-6 shadow-sm">
+          <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+            <div class="min-w-0">
+              <div class="text-xs font-medium text-slate-500">Appuntamento</div>
+              <div id="apptService" class="mt-1 text-lg font-semibold text-slate-900 truncate">—</div>
+              <div id="apptWhen" class="mt-1 text-sm text-slate-600">—</div>
+            </div>
+
+            <!-- Indicatori sintetici relativi allo stato della prenotazione e al salvataggio -->
+            <div class="shrink-0 flex flex-col items-start sm:items-end gap-2">
+              <div id="apptStatusPill"
+                class="inline-flex items-center rounded-full px-3 py-1 text-xs font-medium bg-slate-100 text-slate-700">
+                —
+              </div>
+              <div class="text-xs text-slate-500">Ultimo aggiornamento</div>
+              <div id="lastSaved" class="text-sm font-medium text-slate-800">—</div>
+            </div>
+          </div>
+
+          <!-- Messaggio informativo che delimita il perimetro non emergenziale del pre-triage -->
+          <div class="mt-4 rounded-2xl border bg-slate-50 px-4 py-3 text-sm text-slate-700 leading-relaxed">
+            Per urgenze o sintomi gravi, contatti i servizi di emergenza. Questa sezione non sostituisce una valutazione
+            immediata.
+          </div>
+        </section>
+
+        <!--
+          Form principale del questionario di pre-triage.
+          Consente al paziente di inserire sintomi, eventuali parametri recenti
+          e ulteriori informazioni cliniche preliminari utili alla visita.
+        -->
+        <form id="pretriageForm" class="rounded-2xl border bg-white p-6 shadow-sm" novalidate>
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <h2 class="text-lg font-semibold">Questionario</h2>
+              <p class="mt-1 text-sm text-slate-600">Inserisca informazioni chiare e complete, per quanto possibile.</p>
+            </div>
+
+            <!-- Azioni principali del form: ripristino e salvataggio -->
+            <div class="flex items-center gap-2">
+              <button id="btnReset" type="button"
+                class="h-10 inline-flex items-center justify-center rounded-xl border bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-100">
+                Ripristina
+              </button>
+
+              <button id="btnSave" type="submit"
+                class="h-10 inline-flex items-center justify-center rounded-xl bg-blue-600 px-4 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-100">
+                Salva
+              </button>
+            </div>
+          </div>
+
+          <!-- Messaggio di errore o validazione mostrato in relazione al form -->
+          <div id="formAlert"
+            class="hidden mt-4 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700" role="alert"
+            aria-live="polite"></div>
+
+          <!--
+            Sezioni logiche del questionario.
+            Il form è suddiviso in motivo e sintomi, parametri disponibili
+            e informazioni cliniche aggiuntive.
+          -->
+          <div class="mt-6 grid gap-4">
+            <!--
+              Prima sezione del questionario.
+              Raccoglie il motivo della visita, l’eventuale data di inizio
+              dei sintomi, la scala del dolore e la descrizione testuale
+              della sintomatologia principale.
+            -->
+            <section class="rounded-2xl border bg-slate-50 p-5">
+              <div class="text-sm font-semibold text-slate-900">Motivo e sintomi</div>
+              <p class="mt-1 text-sm text-slate-600">Descriva il motivo della visita e i sintomi principali.</p>
+
+              <div class="mt-4 grid gap-3 sm:grid-cols-12">
+                <div class="sm:col-span-5">
+                  <label class="text-sm font-medium text-slate-700" for="chiefComplaint">Motivo della visita</label>
+                  <input id="chiefComplaint" type="text" maxlength="120" autocomplete="off"
+                    class="mt-2 h-11 w-full rounded-xl border bg-white px-4 text-sm focus:outline-none focus:ring-4 focus:ring-blue-100"
+                    placeholder="Es. dolore toracico, controllo, visita specialistica…" />
+                </div>
+
+                <div class="sm:col-span-4">
+                  <label class="text-sm font-medium text-slate-700" for="onsetDate">Inizio sintomi (opzionale)</label>
+                  <input id="onsetDate" type="date"
+                    class="mt-2 h-11 w-full rounded-xl border bg-white px-4 text-sm focus:outline-none focus:ring-4 focus:ring-blue-100" />
+                </div>
+
+                <div class="sm:col-span-3">
+                  <label class="text-sm font-medium text-slate-700" for="painScale">Dolore (0–10)</label>
+                  <input id="painScale" type="number" inputmode="numeric" min="0" max="10" step="1"
+                    class="mt-2 h-11 w-full rounded-xl border bg-white px-4 text-sm focus:outline-none focus:ring-4 focus:ring-blue-100"
+                    placeholder="—" />
+                </div>
+              </div>
+
+              <div class="mt-4">
+                <label class="text-sm font-medium text-slate-700" for="symptoms">Sintomi principali</label>
+                <textarea id="symptoms" rows="5" maxlength="2000"
+                  class="mt-2 w-full rounded-xl border bg-white px-4 py-3 text-sm focus:outline-none focus:ring-4 focus:ring-blue-100"
+                  placeholder="Descriva sintomi, intensità, andamento, fattori scatenanti o allevianti…"></textarea>
+                <div class="mt-1 text-xs text-slate-500">Campo obbligatorio.</div>
+              </div>
+            </section>
+
+            <!--
+              Seconda sezione del questionario.
+              Consente l’inserimento di eventuali parametri fisiologici recenti
+              misurati dal paziente e utili come informazione preliminare.
+            -->
+            <section class="rounded-2xl border bg-slate-50 p-5">
+              <div class="text-sm font-semibold text-slate-900">Parametri (se disponibili)</div>
+              <p class="mt-1 text-sm text-slate-600">Compili solo se ha misurazioni recenti.</p>
+
+              <div class="mt-4 grid gap-3 sm:grid-cols-12">
+                <div class="sm:col-span-3">
+                  <label class="text-sm font-medium text-slate-700" for="temperatureC">Temperatura (°C)</label>
+                  <input id="temperatureC" type="number" inputmode="decimal" step="0.1" min="30" max="45"
+                    class="mt-2 h-11 w-full rounded-xl border bg-white px-4 text-sm focus:outline-none focus:ring-4 focus:ring-blue-100"
+                    placeholder="—" />
+                </div>
+
+                <div class="sm:col-span-3">
+                  <label class="text-sm font-medium text-slate-700" for="heartRateBpm">Frequenza (bpm)</label>
+                  <input id="heartRateBpm" type="number" inputmode="numeric" step="1" min="30" max="220"
+                    class="mt-2 h-11 w-full rounded-xl border bg-white px-4 text-sm focus:outline-none focus:ring-4 focus:ring-blue-100"
+                    placeholder="—" />
+                </div>
+
+                <div class="sm:col-span-3">
+                  <label class="text-sm font-medium text-slate-700" for="spo2Pct">Saturazione (%)</label>
+                  <input id="spo2Pct" type="number" inputmode="numeric" step="1" min="50" max="100"
+                    class="mt-2 h-11 w-full rounded-xl border bg-white px-4 text-sm focus:outline-none focus:ring-4 focus:ring-blue-100"
+                    placeholder="—" />
+                </div>
+
+                <div class="sm:col-span-3">
+                  <label class="text-sm font-medium text-slate-700" for="bpSystolic">Pressione (sistolica)</label>
+                  <input id="bpSystolic" type="number" inputmode="numeric" step="1" min="60" max="250"
+                    class="mt-2 h-11 w-full rounded-xl border bg-white px-4 text-sm focus:outline-none focus:ring-4 focus:ring-blue-100"
+                    placeholder="—" />
+                </div>
+
+                <div class="sm:col-span-3">
+                  <label class="text-sm font-medium text-slate-700" for="bpDiastolic">Pressione (diastolica)</label>
+                  <input id="bpDiastolic" type="number" inputmode="numeric" step="1" min="30" max="150"
+                    class="mt-2 h-11 w-full rounded-xl border bg-white px-4 text-sm focus:outline-none focus:ring-4 focus:ring-blue-100"
+                    placeholder="—" />
+                </div>
+              </div>
+            </section>
+
+            <!--
+              Terza sezione del questionario.
+              Consente di riportare allergie, terapie in corso, condizioni note
+              e ulteriori note libere rilevanti per la visita.
+            -->
+            <section class="rounded-2xl border bg-slate-50 p-5">
+              <div class="text-sm font-semibold text-slate-900">Informazioni cliniche</div>
+              <p class="mt-1 text-sm text-slate-600">Allergie, farmaci e condizioni note.</p>
+
+              <div class="mt-4 grid gap-3 sm:grid-cols-2">
+                <div>
+                  <label class="text-sm font-medium text-slate-700" for="allergies">Allergie (opzionale)</label>
+                  <textarea id="allergies" rows="3" maxlength="1200"
+                    class="mt-2 w-full rounded-xl border bg-white px-4 py-3 text-sm focus:outline-none focus:ring-4 focus:ring-blue-100"
+                    placeholder="Es. farmaci, alimenti, altre…"></textarea>
+                </div>
+
+                <div>
+                  <label class="text-sm font-medium text-slate-700" for="medications">Farmaci assunti
+                    (opzionale)</label>
+                  <textarea id="medications" rows="3" maxlength="1200"
+                    class="mt-2 w-full rounded-xl border bg-white px-4 py-3 text-sm focus:outline-none focus:ring-4 focus:ring-blue-100"
+                    placeholder="Es. nome, dosaggio, frequenza…"></textarea>
+                </div>
+
+                <div class="sm:col-span-2">
+                  <label class="text-sm font-medium text-slate-700" for="conditions">Condizioni note (opzionale)</label>
+                  <textarea id="conditions" rows="3" maxlength="1200"
+                    class="mt-2 w-full rounded-xl border bg-white px-4 py-3 text-sm focus:outline-none focus:ring-4 focus:ring-blue-100"
+                    placeholder="Es. ipertensione, diabete, interventi, patologie pregresse…"></textarea>
+                </div>
+
+                <div class="sm:col-span-2">
+                  <label class="text-sm font-medium text-slate-700" for="additionalNotes">Note aggiuntive
+                    (opzionale)</label>
+                  <textarea id="additionalNotes" rows="4" maxlength="1500"
+                    class="mt-2 w-full rounded-xl border bg-white px-4 py-3 text-sm focus:outline-none focus:ring-4 focus:ring-blue-100"
+                    placeholder="Qualsiasi informazione utile per la visita…"></textarea>
+                </div>
+              </div>
+            </section>
+          </div>
+        </form>
+      </div>
+
+      <!--
+        Colonna laterale della vista.
+        Fornisce suggerimenti pratici per la compilazione del pre-triage
+        e mostra un avviso dedicato quando le modifiche non sono consentite.
+      -->
+      <aside class="rounded-2xl border bg-white p-6 shadow-sm h-fit">
+        <h2 class="text-lg font-semibold">Suggerimenti</h2>
+        <p class="mt-1 text-sm text-slate-600">Per una visita più efficace.</p>
+
+        <!-- Riquadri informativi con indicazioni operative per il paziente -->
+        <div class="mt-5 grid gap-2">
+          <div class="rounded-xl border bg-slate-50 px-4 py-3">
+            <div class="text-sm font-medium text-slate-900">Documenti utili</div>
+            <div class="mt-1 text-xs text-slate-600">Porti eventuali referti, esami e lista farmaci.</div>
+          </div>
+
+          <div class="rounded-xl border bg-slate-50 px-4 py-3">
+            <div class="text-sm font-medium text-slate-900">Misurazioni recenti</div>
+            <div class="mt-1 text-xs text-slate-600">Se disponibili, inserisca parametri misurati nelle ultime 24–48
+              ore.</div>
+          </div>
+
+          <div class="rounded-xl border bg-slate-50 px-4 py-3">
+            <div class="text-sm font-medium text-slate-900">Chiarezza e sintesi</div>
+            <div class="mt-1 text-xs text-slate-600">Indichi durata, intensità e fattori scatenanti o allevianti.</div>
+          </div>
+        </div>
+
+        <!-- Avviso mostrato quando il pre-triage non è modificabile per l’appuntamento selezionato -->
+        <div id="lockedBox"
+          class="hidden mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800 leading-relaxed">
+          Le modifiche non sono disponibili per questo appuntamento.
+        </div>
+      </aside>
+    </section>
+
+    <!-- Contenitore per errori globali della pagina mostrati lato client -->
+    <div id="pageError" class="hidden mt-6 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700"
+      role="alert" aria-live="polite"></div>
+  </main>
+
+  <!-- Placeholder dei componenti condivisi renderizzati dinamicamente lato client -->
+  <div data-component="footer"></div>
+  <div data-component="modal"></div>
+</body>
+
+</html>

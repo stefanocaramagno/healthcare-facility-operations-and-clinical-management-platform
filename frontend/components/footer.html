@@ -1,0 +1,43 @@
+<!--
+  File: frontend/components/footer.html
+
+  Scopo
+  -----
+  Definire il footer condiviso del front-end, fornendo una chiusura coerente
+  delle pagine applicative con riferimenti essenziali al portale e collegamenti
+  rapidi verso le principali sezioni pubbliche.
+
+  Ruolo nel sistema
+  -----------------
+  Questo componente viene riutilizzato come elemento comune nelle pagine del
+  front-end e ha il compito di mantenere continuità visiva, identità del portale
+  e accesso immediato ai riferimenti informativi principali.
+
+  Note
+  ----
+  Il markup è volutamente minimale e contiene un placeholder per l’anno corrente
+  (`footerYear`), destinato a essere valorizzato dinamicamente lato client dagli
+  script condivisi del front-end.
+-->
+
+<footer class="mt-10 border-t bg-white">
+  <!--
+    Contenitore principale del footer.
+    Organizza:
+    - l’identità testuale del portale con anno dinamico;
+    - i collegamenti rapidi verso home e sezioni informative pubbliche.
+  -->
+  <div class="mx-auto max-w-7xl px-4 py-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <!-- Riferimento istituzionale del portale con anno aggiornabile via JavaScript -->
+    <div class="text-sm text-slate-600">
+      © <span id="footerYear">—</span> Healthcare Portal
+    </div>
+
+    <!-- Collegamenti rapidi alle sezioni pubbliche della landing page -->
+    <div class="flex flex-wrap items-center gap-4 text-sm">
+      <a class="text-slate-600 hover:text-slate-900" href="/index.html">Home</a>
+      <a class="text-slate-600 hover:text-slate-900" href="/index.html#about">Informazioni</a>
+      <a class="text-slate-600 hover:text-slate-900" href="/index.html#contacts">Contatti</a>
+    </div>
+  </div>
+</footer>

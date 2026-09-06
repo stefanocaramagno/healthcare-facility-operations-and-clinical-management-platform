@@ -1,0 +1,230 @@
+<!--
+  File: frontend/pages/auth/register-patient.html
+
+  Scopo
+  -----
+  Definire la pagina di registrazione self-service del paziente, consentendo
+  l’inserimento dei dati anagrafici, di contatto e delle credenziali necessarie
+  alla creazione di un nuovo account nel portale.
+
+  Ruolo nel sistema
+  -----------------
+  Questa pagina rappresenta il punto di ingresso del flusso di registrazione
+  autonoma per gli utenti con ruolo Patient. Costituisce la base del processo
+  di onboarding e si integra con lo script client-side che gestisce validazione,
+  invio dei dati e feedback all’utente.
+
+  Note
+  ----
+  Il file contiene il markup strutturale della pagina e gli hook DOM utilizzati
+  dallo script `../../js/auth/register-patient.js`. La logica operativa della
+  registrazione è demandata al codice JavaScript associato.
+-->
+
+<!doctype html>
+<html lang="it">
+
+<head>
+  <!-- Metadati di base del documento HTML -->
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Titolo mostrato nella scheda del browser -->
+  <title>Registrazione Paziente | Healthcare Portal</title>
+
+  <!-- Risorse statiche condivise della pagina -->
+  <link rel="icon" href="../../assets/favicon.ico" />
+  <link rel="stylesheet" href="../../css/styles.css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!--
+    Script condivisi e specifici della pagina.
+    Vengono caricati con `defer` per eseguire la logica applicativa
+    dopo il parsing completo del documento HTML.
+  -->
+  <script defer src="../../js/common/utils.js"></script>
+  <script defer src="../../js/auth/register-patient.js"></script>
+</head>
+
+<body class="min-h-screen bg-slate-50 text-slate-900">
+  <!--
+    Header minimale della pagina di registrazione.
+    Mantiene il branding del portale e consente il ritorno al login o alla home.
+  -->
+  <header class="border-b bg-white">
+    <div class="mx-auto max-w-6xl px-4 py-4 flex items-center justify-between">
+      <!-- Identità visuale del portale -->
+      <a href="../../index.html" class="flex items-center gap-2" aria-label="Torna alla home">
+        <div class="h-9 w-9 rounded-xl bg-blue-600 text-white grid place-items-center font-semibold">H</div>
+        <div class="leading-tight">
+          <div class="font-semibold">Healthcare Portal</div>
+          <div class="text-xs text-slate-500">Registrazione paziente</div>
+        </div>
+      </a>
+
+      <!-- Collegamento rapido al flusso di accesso -->
+      <a href="./login.html" class="text-sm text-slate-600 hover:text-slate-900">Torna al login</a>
+    </div>
+  </header>
+
+  <!--
+    Contenuto principale della pagina.
+    La struttura a due colonne separa il messaggio introduttivo dal form operativo di registrazione.
+  -->
+  <main class="mx-auto max-w-6xl px-4 py-10">
+    <div class="grid lg:grid-cols-2 gap-8 items-start">
+      <!--
+        Colonna informativa visibile su desktop.
+        Serve a contestualizzare il flusso di onboarding del paziente.
+      -->
+      <section class="hidden lg:block">
+        <div class="rounded-2xl border bg-white p-8 shadow-sm">
+          <div class="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-sm text-blue-700">
+            <span class="h-2 w-2 rounded-full bg-blue-600"></span>
+            Nuovo account
+          </div>
+
+          <h1 class="mt-4 text-3xl font-semibold tracking-tight">Crea il tuo profilo paziente.</h1>
+          <p class="mt-3 text-slate-600 leading-relaxed">
+            Compila i dati richiesti per registrarti al portale. Dopo la registrazione riceverai una e-mail con il link
+            necessario per attivare l’account.
+          </p>
+
+          <!-- Riepilogo sintetico dei passaggi principali del flusso -->
+          <div class="mt-6 grid gap-3 text-sm">
+            <div class="flex gap-3">
+              <div class="h-9 w-9 rounded-xl bg-blue-50 grid place-items-center text-blue-700 font-semibold">✓</div>
+              <div>
+                <div class="font-medium">Registrazione guidata</div>
+                <div class="text-slate-600">Inserisci i tuoi dati anagrafici e di contatto.</div>
+              </div>
+            </div>
+            <div class="flex gap-3">
+              <div class="h-9 w-9 rounded-xl bg-blue-50 grid place-items-center text-blue-700 font-semibold">✓</div>
+              <div>
+                <div class="font-medium">Attivazione e-mail</div>
+                <div class="text-slate-600">L’accesso al portale sarà disponibile dopo la conferma del link ricevuto via
+                  e-mail.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!--
+        Colonna operativa contenente il form di registrazione paziente.
+        Include anche il contenitore dedicato a eventuali messaggi di errore.
+      -->
+      <section>
+        <div class="rounded-2xl border bg-white p-6 sm:p-8 shadow-sm">
+          <!-- Intestazione del box con indicazione del tipo di registrazione -->
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <h2 class="text-xl font-semibold">Registrazione paziente</h2>
+              <p class="mt-1 text-sm text-slate-600">
+                Inserisci le informazioni richieste per creare il tuo account.
+              </p>
+            </div>
+            <span class="shrink-0 rounded-full bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700">
+              Self-registration
+            </span>
+          </div>
+
+          <!-- Contenitore dedicato agli errori di validazione o di registrazione -->
+          <div id="errorBox"
+            class="hidden mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"></div>
+
+          <!--
+            Form principale di registrazione.
+            Gli script associati gestiscono validazione, invio dei dati
+            e feedback finale mostrato all’utente.
+          -->
+          <form id="registerForm" class="mt-6 grid gap-4" novalidate>
+            <!-- Dati anagrafici di base -->
+            <div class="grid sm:grid-cols-2 gap-4">
+              <div class="grid gap-1.5">
+                <label for="firstName" class="text-sm font-medium">Nome</label>
+                <input id="firstName" name="firstName" type="text" autocomplete="given-name" required
+                  class="h-11 rounded-xl border px-3 outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-300"
+                  placeholder="Nome" />
+              </div>
+
+              <div class="grid gap-1.5">
+                <label for="lastName" class="text-sm font-medium">Cognome</label>
+                <input id="lastName" name="lastName" type="text" autocomplete="family-name" required
+                  class="h-11 rounded-xl border px-3 outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-300"
+                  placeholder="Cognome" />
+              </div>
+            </div>
+
+            <!-- Dati personali e di contatto -->
+            <div class="grid sm:grid-cols-2 gap-4">
+              <div class="grid gap-1.5">
+                <label for="dateOfBirth" class="text-sm font-medium">Data di nascita</label>
+                <input id="dateOfBirth" name="dateOfBirth" type="date" required
+                  class="h-11 rounded-xl border px-3 outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-300" />
+              </div>
+
+              <div class="grid gap-1.5">
+                <label for="phone" class="text-sm font-medium">Telefono</label>
+                <input id="phone" name="phone" type="tel" autocomplete="tel"
+                  class="h-11 rounded-xl border px-3 outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-300"
+                  placeholder="Telefono" />
+              </div>
+            </div>
+
+            <!-- Indirizzo di residenza o recapito -->
+            <div class="grid gap-1.5">
+              <label for="address" class="text-sm font-medium">Indirizzo</label>
+              <input id="address" name="address" type="text" autocomplete="street-address"
+                class="h-11 rounded-xl border px-3 outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-300"
+                placeholder="Indirizzo (opzionale)" />
+            </div>
+
+            <!-- Credenziali di accesso -->
+            <div class="grid gap-1.5">
+              <label for="email" class="text-sm font-medium">E-mail</label>
+              <input id="email" name="email" type="email" autocomplete="email" required
+                class="h-11 rounded-xl border px-3 outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-300"
+                placeholder="nome.cognome@dominio.it" />
+            </div>
+
+            <div class="grid gap-1.5">
+              <label for="password" class="text-sm font-medium">Password</label>
+              <input id="password" name="password" type="password" autocomplete="new-password" required minlength="8"
+                class="h-11 rounded-xl border px-3 outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-300"
+                placeholder="Almeno 8 caratteri" />
+            </div>
+
+            <div class="grid gap-1.5">
+              <label for="confirmPassword" class="text-sm font-medium">Conferma password</label>
+              <input id="confirmPassword" name="confirmPassword" type="password" autocomplete="new-password" required
+                minlength="8"
+                class="h-11 rounded-xl border px-3 outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-300"
+                placeholder="Ripeti la password" />
+            </div>
+
+            <!-- Azione principale di invio del form -->
+            <button id="submitBtn" type="submit"
+              class="h-11 rounded-xl bg-blue-600 px-4 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-200">
+              Crea account
+            </button>
+
+            <!-- Nota finale sul meccanismo di attivazione dell’account -->
+            <div class="mt-1 text-xs text-slate-500 leading-relaxed">
+              Dopo la registrazione riceverai una e-mail di attivazione. L’accesso sarà disponibile solo dopo la
+              conferma del link ricevuto.
+            </div>
+          </form>
+
+          <!-- Collegamento di ritorno al flusso di login -->
+          <div class="mt-6 border-t pt-5 text-sm text-slate-600">
+            <a href="./login.html" class="text-blue-700 hover:text-blue-900">Torna al login</a>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+</body>
+
+</html>

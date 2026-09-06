@@ -1,0 +1,234 @@
+<!--
+  File: frontend/pages/delegate/dashboard.html
+
+  Scopo
+  -----
+  Definire la dashboard dell’area Delegate dedicata alla consultazione
+  sintetica delle attività eseguibili per conto del paziente delegante,
+  consentendo la selezione del paziente, la visualizzazione di indicatori
+  aggregati, il riepilogo dei prossimi appuntamenti e l’accesso rapido
+  alle principali funzionalità disponibili tramite delega.
+
+  Ruolo nel sistema
+  -----------------
+  Questa pagina appartiene all’area Delegate del portale e rappresenta la
+  vista iniziale del delegato autenticato. La dashboard consente di
+  selezionare uno dei pazienti per cui esiste una delega attiva, mostrare
+  lo stato sintetico delle abilitazioni associate, evidenziare appuntamenti
+  e pagamenti rilevanti e indirizzare rapidamente verso le sezioni
+  operative abilitate dal perimetro della delega selezionata.
+
+  Note
+  ----
+  Il file contiene il markup strutturale della pagina e i placeholder DOM
+  utilizzati dal relativo script JavaScript. La logica di autenticazione,
+  caricamento delle deleghe attive, selezione del paziente delegante,
+  recupero dei KPI, popolamento del riepilogo appuntamenti, aggiornamento
+  dei permessi visualizzati e trattamento degli errori è demandata ai
+  moduli caricati in `../../js/common/` e in
+  `../../js/delegate/dashboard.js`.
+-->
+
+<!doctype html>
+<html lang="it">
+
+<head>
+  <!-- Metadati di base del documento HTML -->
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Titolo mostrato nella scheda del browser -->
+  <title>Dashboard Delegato | Healthcare Portal</title>
+
+  <!-- Risorse statiche condivise della pagina -->
+  <link rel="icon" href="../../assets/favicon.ico" />
+  <link rel="stylesheet" href="../../css/styles.css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!--
+    Script condivisi e specifici della pagina.
+    Vengono caricati con `defer` per eseguire la logica applicativa
+    dopo il parsing completo del documento HTML.
+  -->
+  <script defer src="../../js/common/utils.js"></script>
+  <script defer src="../../js/common/session.js"></script>
+  <script defer src="../../js/common/auth.js"></script>
+  <script defer src="../../js/common/ui-components.js"></script>
+  <script defer src="../../js/delegate/dashboard.js"></script>
+</head>
+
+<body class="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
+  <!-- Placeholder del componente navbar condiviso, sostituito dinamicamente lato client -->
+  <div data-component="navbar"></div>
+
+  <!--
+    Contenuto principale della dashboard del delegato.
+    Comprende l’intestazione della vista, il selettore del paziente
+    delegante, i KPI sintetici, il riepilogo dei prossimi appuntamenti,
+    le azioni rapide e il contenitore per eventuali errori globali.
+  -->
+  <main class="mx-auto max-w-7xl px-4 py-8 flex-1">
+    <!--
+      Sezione introduttiva della dashboard.
+      Presenta il contesto operativo del delegato e include la selezione
+      del paziente per cui è attiva una delega.
+    -->
+    <section class="rounded-2xl border bg-white p-6 sm:p-8 shadow-sm">
+      <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+        <div>
+          <div class="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-sm text-blue-700">
+            <span class="h-2 w-2 rounded-full bg-blue-600"></span>
+            Accesso per delega
+          </div>
+          <h1 class="mt-4 text-2xl sm:text-3xl font-semibold tracking-tight">Gestisci attività per conto del paziente
+          </h1>
+          <p class="mt-2 text-slate-600 leading-relaxed">
+            Seleziona il paziente per cui hai una delega attiva e consulta appuntamenti e pagamenti.
+            Le operazioni disponibili dipendono dai permessi associati alla delega.
+          </p>
+        </div>
+
+        <!--
+          Area di selezione del paziente delegante.
+          Consente di scegliere il paziente da gestire e di forzare
+          il refresh dei dati sintetici della dashboard.
+        -->
+        <div class="w-full lg:w-[28rem]">
+          <label class="text-sm font-medium text-slate-700" for="patientSelect">Paziente delegante</label>
+          <div class="mt-2 flex gap-2">
+            <select id="patientSelect"
+              class="h-11 w-full rounded-xl border bg-white px-3 text-sm text-slate-800 focus:outline-none focus:ring-4 focus:ring-blue-100">
+              <option value="">Caricamento…</option>
+            </select>
+            <button id="refreshBtn" type="button"
+              class="h-11 rounded-xl bg-blue-600 px-4 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-100">
+              Aggiorna
+            </button>
+          </div>
+          <p class="mt-2 text-xs text-slate-500">
+            Le deleghe vengono definite dal paziente nella propria area personale.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!--
+      Riquadri KPI della dashboard.
+      Mostrano una sintesi immediata delle deleghe attive, degli
+      appuntamenti imminenti, dei pagamenti pendenti e dei permessi
+      disponibili per la delega selezionata.
+    -->
+    <section class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div class="rounded-2xl border bg-white p-5 shadow-sm">
+        <div class="text-sm text-slate-600">Deleghe attive</div>
+        <div class="mt-2 flex items-end justify-between">
+          <div id="kpiDelegations" class="text-3xl font-semibold">—</div>
+          <div class="text-xs text-slate-500">abilitazioni</div>
+        </div>
+        <div class="mt-3 text-xs text-slate-500">associate al tuo account</div>
+      </div>
+
+      <div class="rounded-2xl border bg-white p-5 shadow-sm">
+        <div class="text-sm text-slate-600">Appuntamenti (30 giorni)</div>
+        <div class="mt-2 flex items-end justify-between">
+          <div id="kpiAppointments" class="text-3xl font-semibold">—</div>
+          <div class="text-xs text-slate-500">in programma</div>
+        </div>
+        <div class="mt-3 text-xs text-slate-500">per il paziente selezionato</div>
+      </div>
+
+      <div class="rounded-2xl border bg-white p-5 shadow-sm">
+        <div class="text-sm text-slate-600">Pagamenti da completare</div>
+        <div class="mt-2 flex items-end justify-between">
+          <div id="kpiPendingPayments" class="text-3xl font-semibold">—</div>
+          <div class="text-xs text-slate-500">operazioni</div>
+        </div>
+        <div class="mt-3 text-xs text-slate-500">verifica e conferma</div>
+      </div>
+
+      <div class="rounded-2xl border bg-white p-5 shadow-sm">
+        <div class="text-sm text-slate-600">Permessi attivi</div>
+        <div class="mt-2">
+          <div id="kpiPermissions" class="flex flex-wrap gap-2 text-sm text-slate-800">—</div>
+          <div class="mt-1 text-xs text-slate-500">in base alla delega selezionata</div>
+        </div>
+      </div>
+    </section>
+
+    <!--
+      Layout principale della dashboard.
+      La colonna principale mostra il riepilogo dei prossimi appuntamenti,
+      mentre la colonna laterale espone i collegamenti rapidi alle sezioni operative.
+    -->
+    <section class="mt-6 grid lg:grid-cols-3 gap-4">
+      <!--
+        Riquadro principale della dashboard.
+        Mostra l’elenco sintetico dei prossimi appuntamenti relativi
+        al paziente attualmente selezionato.
+      -->
+      <div class="lg:col-span-2 rounded-2xl border bg-white p-6 shadow-sm">
+        <div class="flex items-start justify-between gap-4">
+          <div>
+            <h2 class="text-lg font-semibold">Prossimi appuntamenti</h2>
+            <p class="mt-1 text-sm text-slate-600">Riepilogo dei prossimi 30 giorni per il paziente selezionato.</p>
+          </div>
+          <a class="text-sm text-blue-700 hover:text-blue-900" href="./appointments.html">Vedi tutti</a>
+        </div>
+
+        <!--
+          Tabella semplificata degli appuntamenti imminenti.
+          Il contenuto dell’elenco viene popolato dinamicamente lato client.
+        -->
+        <div class="mt-5 overflow-hidden rounded-xl border">
+          <div class="grid grid-cols-12 bg-slate-50 px-4 py-3 text-xs font-medium text-slate-600">
+            <div class="col-span-5">Data/ora</div>
+            <div class="col-span-3">Prestazione</div>
+            <div class="col-span-4 text-right">Stato</div>
+          </div>
+          <div id="appointmentsList" class="divide-y">
+            <div class="px-4 py-4 text-sm text-slate-600">Seleziona un paziente per visualizzare i dati.</div>
+          </div>
+        </div>
+      </div>
+
+      <!--
+        Colonna laterale della dashboard.
+        Raccoglie le azioni rapide verso le principali sezioni
+        a cui il delegato può accedere.
+      -->
+      <aside class="rounded-2xl border bg-white p-6 shadow-sm">
+        <h2 class="text-lg font-semibold">Azioni rapide</h2>
+        <p class="mt-1 text-sm text-slate-600">Funzioni principali disponibili al delegato.</p>
+
+        <div class="mt-5 grid gap-2">
+          <a class="rounded-xl border px-4 py-3 hover:bg-slate-50" href="./appointments.html">
+            <div class="font-medium">Appuntamenti</div>
+            <div class="text-xs text-slate-500">lista e dettagli</div>
+          </a>
+          <a class="rounded-xl border px-4 py-3 hover:bg-slate-50" href="./payments.html">
+            <div class="font-medium">Pagamenti</div>
+            <div class="text-xs text-slate-500">stato e conferme</div>
+          </a>
+          <a class="rounded-xl border px-4 py-3 hover:bg-slate-50" href="./reports.html">
+            <div class="font-medium">Referti</div>
+            <div class="text-xs text-slate-500">consultazione documenti</div>
+          </a>
+          <a class="rounded-xl border px-4 py-3 hover:bg-slate-50" href="./account.html">
+            <div class="font-medium">Account</div>
+            <div class="text-xs text-slate-500">dati e impostazioni</div>
+          </a>
+        </div>
+      </aside>
+    </section>
+
+    <!-- Contenitore per errori globali della pagina mostrati lato client -->
+    <div id="pageError" class="hidden mt-6 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700"
+      role="alert" aria-live="polite"></div>
+  </main>
+
+  <!-- Placeholder dei componenti condivisi renderizzati dinamicamente lato client -->
+  <div data-component="footer"></div>
+  <div data-component="modal"></div>
+</body>
+
+</html>
